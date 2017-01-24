@@ -30,7 +30,23 @@
 
 package net.imagej.notebook;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.awt.image.BufferedImage;
+
+import net.imagej.Dataset;
+import net.imagej.DatasetService;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.ByteArray;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import org.scijava.Context;
 
 /**
  * Tests {@link NotebookService}.
@@ -39,6 +55,76 @@ import org.junit.Test;
  */
 public class NotebookServiceTest {
 
+	private Context context;
+	private NotebookService ns;
+	private DatasetService ds;
+
+	@Before
+	public void setUp() {
+		context = new Context(NotebookService.class, DatasetService.class);
+		ns = context.service(NotebookService.class);
+		ds = context.service(DatasetService.class);
+	}
+
+	@After
+	public void tearDown() {
+		context.dispose();
+	}
+
+	/** Tests {@link NotebookService#display(Dataset)}. */
 	@Test
-	public void test() {}
+	public void testDisplayDataset() {
+		final ArrayImg<UnsignedByteType, ByteArray> img = createTestImg();
+		final Dataset dataset = ds.create(img);
+		final Object rendered = ns.display(dataset);
+		assertSameImageDetails(img, rendered);
+	}
+
+	/** Tests {@link NotebookService#display(RandomAccessibleInterval)}. */
+	@Test
+	public void testDisplayRAI() {
+		final ArrayImg<UnsignedByteType, ByteArray> img = createTestImg();
+		final Object rendered = ns.display(img);
+		assertSameImageDetails(img, rendered);
+	}
+
+	// -- Helper methods --
+
+	private ArrayImg<UnsignedByteType, ByteArray> createTestImg() {
+		final int w = 20, h = 20, valueOffset = 23;
+		final byte[] data = new byte[w * h];
+		for (int i = 0; i < data.length; i++) {
+			data[i] = (byte) (valueOffset + i);
+		}
+		return ArrayImgs.unsignedBytes(data, w, h);
+	}
+
+	private void assertSameImageDetails(
+		final ArrayImg<UnsignedByteType, ByteArray> img, final Object rendered)
+	{
+		assertTrue(rendered instanceof BufferedImage);
+		final BufferedImage bi = (BufferedImage) rendered;
+
+		final long w = img.dimension(0);
+		final long h = img.dimension(1);
+		assertEquals(w, bi.getWidth());
+		assertEquals(h, bi.getHeight());
+
+		final byte[] data = img.update(null).getCurrentStorageArray();
+		for (int y = 0; y < h; y++) {
+			for (int x = 0; x < w; x++) {
+				final int index = (int) (y * w + x);
+				final int value = data[index] & 0xff;
+				final int rgb = bi.getRGB(x, y);
+				final int r = rgb & 0xff;
+				final int g = (rgb << 8) & 0xff;
+				final int b = (rgb << 16) & 0xff;
+				final int a = (rgb << 24) & 0xff;
+				assertEquals(value, r);
+				assertEquals(0, g);
+				assertEquals(0, b);
+				assertEquals(0, a);
+			}
+		}
+	}
 }
