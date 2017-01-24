@@ -40,5 +40,5 @@ import org.junit.Test;
 public class NotebookServiceTest {
 
 	@Test
-	public void testDisplay() {}
+	public void test() {}
 }

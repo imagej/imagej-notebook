@@ -30,4 +30,55 @@
 
 package net.imagej.notebook;
 
-public interface NotebookService {}
+import net.imagej.Dataset;
+import net.imagej.ImageJService;
+import net.imagej.axis.Axes;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.Img;
+import net.imglib2.type.numeric.RealType;
+
+/**
+ * Interface for services which provide handy methods for working with
+ * scientific notebook software (e.g.,
+ * <a href="http://beakernotebook.com/">Beaker Notebook</a>).
+ */
+public interface NotebookService extends ImageJService {
+
+	/**
+	 * Converts the given image to a form renderable by scientific notebooks.
+	 * 
+	 * @param source The image to render.
+	 * @return an object that the notebook knows how to draw onscreen.
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	default Object display(final Dataset source) {
+		return display((Img) source, //
+			source.dimensionIndex(Axes.X), //
+			source.dimensionIndex(Axes.Y), //
+			source.dimensionIndex(Axes.CHANNEL));
+	}
+
+	/**
+	 * Converts the given image to a form renderable by scientific notebooks.
+	 * 
+	 * @param source The image to render.
+	 * @return an object that the notebook knows how to draw onscreen.
+	 */
+	default <T extends RealType<T>> Object display(
+		final RandomAccessibleInterval<T> source)
+	{
+		return display(source, 0, 1, -1);
+	}
+
+	/**
+	 * Converts the given image to a form renderable by scientific notebooks.
+	 * 
+	 * @param source The image to render.
+	 * @param xAxis The image dimension to use for the X axis.
+	 * @param yAxis The image dimension to use for the Y axis.
+	 * @param cAxis The image dimension to use for compositing multiple channels.
+	 * @return an object that the notebook knows how to draw onscreen.
+	 */
+	<T extends RealType<T>> Object display(RandomAccessibleInterval<T> source,
+		int xAxis, int yAxis, int cAxis);
+}
