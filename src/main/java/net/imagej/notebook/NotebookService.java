@@ -35,6 +35,7 @@ import net.imagej.ImageJService;
 import net.imagej.axis.Axes;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
 /**
@@ -81,4 +82,45 @@ public interface NotebookService extends ImageJService {
 	 */
 	<T extends RealType<T>> Object display(RandomAccessibleInterval<T> source,
 		int xAxis, int yAxis, int cAxis);
+
+	/**
+	 * Organizes the given list of images into an N-dimensional mosaic.
+	 * <p>
+	 * For example, passing a grid layout of {2, 2} with four images {A, B, C, D}
+	 * will result in them being laid out along the first two axes (let's call
+	 * them X and Y) in a 2 x 2 grid:
+	 *
+	 * <pre>
+	 * AB
+	 * CD
+	 * </pre>
+	 * </p>
+	 * <p>
+	 * The images do not need to be of equal size; images will be padded along
+	 * each dimension as needed so that everything lines up in a grid. In the
+	 * example above, if A and C have different widths, then the first column will
+	 * be as wide as the wider of the two. Same for the second column with images
+	 * B and D. If A and B have different heights, than the first row will be as
+	 * tall as the taller of the two. And same for the second row with images C
+	 * and D.
+	 * </p>
+	 * <p>
+	 * Normally, the number of grid cells (i.e., the product of the grid
+	 * dimensions) should match the given number of images. However, the algorithm
+	 * handles a mismatch in either direction. If the number of grid cells is less
+	 * than the number of images, than the excess images are discarded&mdash;i.e.,
+	 * they will not appear anywhere in the mosaic. On the other hand, if the
+	 * number of grid cells exceeds the given number of images, then some grid
+	 * cells will be empty. The cells are filled along the first dimension
+	 * fastest, so e.g. a grid layout of {2, 3, 2} will fill as follows: 000, 100,
+	 * 010, 110, 020, 120, 001, 101, 011, 111, 021, 121.
+	 * </p>
+	 *
+	 * @param gridLayout Dimensions of the grid.
+	 * @param images Images to combine into the mosaic.
+	 * @return A single mosaic image, laid out as specified.
+	 */
+	<T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T> mosaic(
+		final int[] gridLayout,
+		@SuppressWarnings("unchecked") final RandomAccessibleInterval<T>... images);
 }
