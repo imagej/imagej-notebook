@@ -30,7 +30,12 @@
 
 package net.imagej.notebook;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import net.imagej.display.ColorTables;
 import net.imagej.ops.OpService;
@@ -58,6 +63,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
+import org.scijava.util.ClassUtils;
 
 /**
  * AWT-driven implementation of {@link NotebookService}.
@@ -207,5 +213,53 @@ public class DefaultNotebookService extends AbstractService implements
 
 		// TODO: Some day, use Views.arrange, Views.tile or Views.combine instead.
 		return result;
+	}
+
+	@Override
+	public NotebookTable methods(final Class<?> type, final String prefix) {
+		final NotebookTable table = new NotebookTable();
+
+		final Method[] methods = type.getMethods();
+		// NB: Methods are returned in inconsistent order.
+		Arrays.sort(methods, new Comparator<Method>() {
+
+			@Override
+			public int compare(final Method m1, final Method m2) {
+				final int nameComp = m1.getName().compareTo(m2.getName());
+				if (nameComp != 0) return nameComp;
+				final int pCount1 = m1.getParameterCount();
+				final int pCount2 = m2.getParameterCount();
+				if (pCount1 != pCount2) return pCount1 - pCount2;
+				final Class<?>[] pTypes1 = m1.getParameterTypes();
+				final Class<?>[] pTypes2 = m2.getParameterTypes();
+				for (int i = 0; i < pTypes1.length; i++) {
+					final int typeComp = ClassUtils.compare(pTypes1[i], pTypes2[i]);
+					if (typeComp != 0) return typeComp;
+				}
+				return ClassUtils.compare(m1.getReturnType(), m2.getReturnType());
+			}
+		});
+
+		for (final Method m : methods) {
+			final String name = m.getName();
+			if (!name.startsWith(prefix)) continue;
+
+			final Class<?>[] paramTypes = m.getParameterTypes();
+			final List<String> args = Arrays.asList(paramTypes).stream().map(//
+				c -> c.getName() //
+			).collect(Collectors.toList());
+			String arguments = args.toString();
+			arguments = arguments.substring(1, arguments.length() - 1);
+			if (arguments.isEmpty()) arguments = "<none>";
+
+			final String returns = m.getReturnType().getName();
+
+			table.addRow(//
+				"name", name, //
+				"arguments", arguments, //
+				"returns", returns //
+			);
+		}
+		return table;
 	}
 }

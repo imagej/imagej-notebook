@@ -34,6 +34,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.awt.image.BufferedImage;
+import java.util.LinkedHashMap;
 
 import net.imagej.Dataset;
 import net.imagej.DatasetService;
@@ -88,6 +89,21 @@ public class NotebookServiceTest {
 		assertSameImageDetails(img, rendered);
 	}
 
+	@Test
+	public void testMethods() {
+		final NotebookTable table = ns.methods(java.lang.Object.class);
+		assertEquals(9, table.size());
+		assertRow(table.get(0), "equals", "java.lang.Object", "boolean");
+		assertRow(table.get(1), "getClass", "<none>", "java.lang.Class");
+		assertRow(table.get(2), "hashCode", "<none>", "int");
+		assertRow(table.get(3), "notify", "<none>", "void");
+		assertRow(table.get(4), "notifyAll", "<none>", "void");
+		assertRow(table.get(5), "toString", "<none>", "java.lang.String");
+		assertRow(table.get(6), "wait", "<none>", "void");
+		assertRow(table.get(7), "wait", "long", "void");
+		assertRow(table.get(8), "wait", "long, int", "void");
+	}
+
 	// -- Helper methods --
 
 	private ArrayImg<UnsignedByteType, ByteArray> createTestImg() {
@@ -126,5 +142,13 @@ public class NotebookServiceTest {
 				assertEquals(0, a);
 			}
 		}
+	}
+
+	private void assertRow(final LinkedHashMap<String, Object> row1,
+		final String name, final String arguments, final String returns)
+	{
+		assertEquals(name, row1.get("name"));
+		assertEquals(arguments, row1.get("arguments"));
+		assertEquals(returns, row1.get("returns"));
 	}
 }
