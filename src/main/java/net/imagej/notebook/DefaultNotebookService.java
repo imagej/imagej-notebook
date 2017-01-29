@@ -157,10 +157,6 @@ public class DefaultNotebookService extends AbstractService implements
 		final long[] mosaicDims = new long[numDims];
 		for (int d = 0; d < numDims; d++)
 			mosaicDims[d] = offsets[d][offsets[d].length - 1];
-		// for (int x=0; x<gridX; x++) totalW += w[x];
-		// long totalH = 0;
-		// for (int y=0; y<gridY; y++) totalH += h[y];
-		// long totalC = images[0].dimension(2);
 		final FinalInterval mosaicBox = new FinalInterval(mosaicDims);
 
 		final Img<T> result = //
