@@ -42,6 +42,7 @@ import net.imagej.ops.OpService;
 import net.imagej.ops.Ops;
 import net.imagej.ops.special.inplace.Inplaces;
 import net.imglib2.FinalInterval;
+import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converter;
@@ -54,6 +55,7 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.IntervalIndexer;
+import net.imglib2.util.Pair;
 import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.MixedTransformView;
@@ -80,8 +82,9 @@ public class DefaultNotebookService extends AbstractService implements
 
 	@Override
 	public <T extends RealType<T>> Object display(
-		final RandomAccessibleInterval<T> source, final int xAxis, final int yAxis,
-		final int cAxis)
+		final RandomAccessibleInterval<T> source, //
+		final int xAxis, final int yAxis, final int cAxis, //
+		final ValueScaling scaling)
 	{
 		final long[] offset = new long[source.numDimensions()];
 		for (int d = 0; d < offset.length; d++) {
@@ -94,10 +97,25 @@ public class DefaultNotebookService extends AbstractService implements
 		final int c = cAxis >= 0 ? (int) image.dimension(cAxis) : 1;
 		final ARGBScreenImage target = new ARGBScreenImage(w, h);
 		final ArrayList<Converter<T, ARGBType>> converters = new ArrayList<>(c);
+
+		final double min, max;
+		final boolean full = scaling == ValueScaling.FULL || //
+			scaling == ValueScaling.AUTO && isNarrowType(source);
+
+		if (full) {
+			// scale the intensities based on the full range of the type
+			min = image.firstElement().getMinValue();
+			max = image.firstElement().getMaxValue();
+		}
+		else {
+			// scale the intensities based on the sample values
+			final IterableInterval<T> ii = ops.transform().flatIterable(source);
+			final Pair<T, T> minMax = ops.stats().minMax(ii);
+			min = minMax.getA().getRealDouble();
+			max = minMax.getB().getRealDouble();
+		}
+
 		for (int i = 0; i < c; i++) {
-			// NB: No autoscaling, for now.
-			final double min = image.firstElement().getMinValue();
-			final double max = image.firstElement().getMaxValue();
 			final ColorTable8 lut = c == 1 ? //
 				ColorTables.GRAYS : ColorTables.getDefaultColorTable(i);
 			converters.add(new RealLUTConverter<T>(min, max, lut));
@@ -257,5 +275,13 @@ public class DefaultNotebookService extends AbstractService implements
 			);
 		}
 		return table;
+	}
+
+	// -- Helper methods --
+
+	private <T extends RealType<T>> boolean isNarrowType(
+		final RandomAccessibleInterval<T> source)
+	{
+		return Util.getTypeFromInterval(source).getBitsPerPixel() <= 8;
 	}
 }

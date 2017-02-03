@@ -45,6 +45,40 @@ import net.imglib2.type.numeric.RealType;
  */
 public interface NotebookService extends ImageJService {
 
+	/** Strategy to use for scaling the image intensity values. */
+	enum ValueScaling {
+			/**
+			 * Scales the display according to a "best effort": "narrow" types with
+			 * few sample values (e.g., {@code bit}, {@code uint2}, {@code uint4} and
+			 * {@code uint8}) are scaled according to the {@code FULL} strategy,
+			 * whereas "wide" types with many possible values (e.g., {@code uint16},
+			 * {@code float32} and {@code float64}) are scaled according to the
+			 * {@code DATA} strategy.
+			 * <p>
+			 * That rationale is that people are accustomed to seeing narrow image
+			 * types rendered across the full range, whereas wide image types
+			 * typically do not empass the entire range of the type and rendering them
+			 * as such results in image which appear all or mostly black or gray.
+			 * </p>
+			 */
+			AUTO,
+
+			/**
+			 * Scales the display to match the bounds of the data type. For example,
+			 * {@code uint8} will be scaled to 0-255, regardless of the actual data
+			 * values.
+			 */
+			FULL,
+
+			/**
+			 * Scales the display to match the actual min and max values of the data.
+			 * For example, a {@code uint16} dataset with sample values ranging
+			 * between 139 and 3156 will map 139 to minimum intensity and 3156 to
+			 * maximum intensity.
+			 */
+			DATA
+	}
+
 	/**
 	 * Converts the given image to a form renderable by scientific notebooks.
 	 * 
@@ -56,7 +90,7 @@ public interface NotebookService extends ImageJService {
 		return display((Img) source, //
 			source.dimensionIndex(Axes.X), //
 			source.dimensionIndex(Axes.Y), //
-			source.dimensionIndex(Axes.CHANNEL));
+			source.dimensionIndex(Axes.CHANNEL), ValueScaling.AUTO);
 	}
 
 	/**
@@ -68,20 +102,22 @@ public interface NotebookService extends ImageJService {
 	default <T extends RealType<T>> Object display(
 		final RandomAccessibleInterval<T> source)
 	{
-		return display(source, 0, 1, -1);
+		return display(source, 0, 1, -1, ValueScaling.AUTO);
 	}
 
 	/**
 	 * Converts the given image to a form renderable by scientific notebooks.
-	 * 
+	 *
 	 * @param source The image to render.
 	 * @param xAxis The image dimension to use for the X axis.
 	 * @param yAxis The image dimension to use for the Y axis.
-	 * @param cAxis The image dimension to use for compositing multiple channels.
+	 * @param cAxis The image dimension to use for compositing multiple channels,
+	 *          or -1 for no compositing.
+	 * @param scaling Value scaling strategy; see {@link ValueScaling}.
 	 * @return an object that the notebook knows how to draw onscreen.
 	 */
 	<T extends RealType<T>> Object display(RandomAccessibleInterval<T> source,
-		int xAxis, int yAxis, int cAxis);
+		int xAxis, int yAxis, int cAxis, ValueScaling scaling);
 
 	/**
 	 * Organizes the given list of images into an N-dimensional mosaic.
