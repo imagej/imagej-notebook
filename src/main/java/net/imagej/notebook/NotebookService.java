@@ -116,10 +116,12 @@ public interface NotebookService extends ImageJService {
 	 * @param cAxis The image dimension to use for compositing multiple channels,
 	 *          or -1 for no compositing.
 	 * @param scaling Value scaling strategy; see {@link ValueScaling}.
+	 * @param pos Dimensional position of the image. Passing null or the empty
+	 *          array will display the default (typically the first) position.
 	 * @return an object that the notebook knows how to draw onscreen.
 	 */
 	<T extends RealType<T>> Object display(RandomAccessibleInterval<T> source,
-		int xAxis, int yAxis, int cAxis, ValueScaling scaling);
+		int xAxis, int yAxis, int cAxis, ValueScaling scaling, long... pos);
 
 	/**
 	 * Organizes the given list of images into an N-dimensional mosaic.

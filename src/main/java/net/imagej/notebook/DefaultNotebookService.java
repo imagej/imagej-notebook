@@ -84,7 +84,7 @@ public class DefaultNotebookService extends AbstractService implements
 	public <T extends RealType<T>> Object display(
 		final RandomAccessibleInterval<T> source, //
 		final int xAxis, final int yAxis, final int cAxis, //
-		final ValueScaling scaling)
+		final ValueScaling scaling, final long... pos)
 	{
 		final long[] offset = new long[source.numDimensions()];
 		for (int d = 0; d < offset.length; d++) {
@@ -122,6 +122,7 @@ public class DefaultNotebookService extends AbstractService implements
 		}
 		final CompositeXYProjector<T> proj = new CompositeXYProjector<>(image,
 			target, converters, cAxis);
+		if (pos != null && pos.length > 0) proj.setPosition(pos);
 		proj.setComposite(true);
 		proj.map();
 		return target.image();
