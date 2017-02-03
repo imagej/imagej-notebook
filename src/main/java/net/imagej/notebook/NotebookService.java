@@ -42,6 +42,8 @@ import net.imglib2.type.numeric.RealType;
  * Interface for services which provide handy methods for working with
  * scientific notebook software (e.g.,
  * <a href="http://beakernotebook.com/">Beaker Notebook</a>).
+ *
+ * @author Curtis Rueden
  */
 public interface NotebookService extends ImageJService {
 
