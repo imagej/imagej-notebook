@@ -104,7 +104,13 @@ public interface NotebookService extends ImageJService {
 	default <T extends RealType<T>> Object display(
 		final RandomAccessibleInterval<T> source)
 	{
-		return display(source, 0, 1, -1, ValueScaling.AUTO);
+		// NB: Assume <=3 samples in the 3rd dimension means channels. Of course,
+		// we have no metadata with a vanilla RAI, but this is a best guess;
+		// 3rd dimensions with >3 samples are probably something like Z or time.
+		final int cAxis = //
+			source.numDimensions() > 2 && source.dimension(2) <= 3 ? 2 : -1;
+
+		return display(source, 0, 1, cAxis, ValueScaling.AUTO);
 	}
 
 	/**
