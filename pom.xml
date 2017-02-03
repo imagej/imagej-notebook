@@ -11,7 +11,7 @@
 
 	<groupId>net.imagej</groupId>
 	<artifactId>imagej-notebook</artifactId>
-	<version>0.2.0-SNAPSHOT</version>
+	<version>0.2.0</version>
 
 	<name>ImageJ Notebook</name>
 	<description>Functions for working with ImageJ in scientific notebook software.</description>
@@ -60,7 +60,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/imagej/imagej-notebook</connection>
 		<developerConnection>scm:git:git@github.com:imagej/imagej-notebook</developerConnection>
-		<tag>HEAD</tag>
+		<tag>imagej-notebook-0.2.0</tag>
 		<url>https://github.com/imagej/imagej-notebook</url>
 	</scm>
 	<issueManagement>
