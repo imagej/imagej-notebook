@@ -59,7 +59,6 @@ import net.imglib2.util.Pair;
 import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.MixedTransformView;
-import net.imglib2.view.Views;
 
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -86,11 +85,7 @@ public class DefaultNotebookService extends AbstractService implements
 		final int xAxis, final int yAxis, final int cAxis, //
 		final ValueScaling scaling, final long... pos)
 	{
-		final long[] offset = new long[source.numDimensions()];
-		for (int d = 0; d < offset.length; d++) {
-			offset[d] = -source.min(d);
-		}
-		final IntervalView<T> image = Views.translate(source, offset);
+		final IntervalView<T> image = ops.transform().zeroMin(source);
 
 		final int w = xAxis >= 0 ? (int) image.dimension(xAxis) : 1;
 		final int h = yAxis >= 0 ? (int) image.dimension(yAxis) : 1;
