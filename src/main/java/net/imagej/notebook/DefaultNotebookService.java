@@ -194,7 +194,7 @@ public class DefaultNotebookService extends AbstractService implements
 			for (int d = 0; d < numDims; d++)
 				offset[d] = offsets[d][pos[d]];
 			final MixedTransformView<T> translated = //
-				ops.transform().translate(images[i], offset);
+				ops.transform().translate(ops.transform().zeroMin(images[i]), offset);
 
 			// Unfortunately, this operation loses the "Interval" from the RAI:
 			// translated objects are RAs, not RAIs.
