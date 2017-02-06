@@ -117,5 +117,15 @@ Wisconsin-Madison.</license.copyrightOwners>
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>io.scif</groupId>
+			<artifactId>scifio</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>net.imagej</groupId>
+			<artifactId>imagej-ui-swing</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>
