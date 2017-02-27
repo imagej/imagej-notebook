@@ -68,8 +68,8 @@
 		<url>https://github.com/imagej/imagej-notebook/issues</url>
 	</issueManagement>
 	<ciManagement>
-		<system>Jenkins</system>
-		<url>http://jenkins.imagej.net/job/ImageJ-notebook/</url>
+		<system>Travis CI</system>
+		<url>https://travis-ci.org/imagej/imagej-notebook</url>
 	</ciManagement>
 
 	<properties>

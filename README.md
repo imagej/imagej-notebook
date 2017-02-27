@@ -1,4 +1,4 @@
-[![](http://jenkins.imagej.net/job/ImageJ-notebook/lastBuild/badge/icon)](http://jenkins.imagej.net/job/ImageJ-notebook/)
+[![](https://travis-ci.org/imagej/imagej-notebook.svg?branch=master)](https://travis-ci.org/imagej/imagej-notebook)
 
 This repository houses functions to ease working with ImageJ in scientific
 notebook software, notably [Beaker Notebook](http://beakernotebook.com/) and
