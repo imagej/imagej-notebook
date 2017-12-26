@@ -114,19 +114,19 @@ public class NotebookServiceTestDrive<T extends RealType<T> & NativeType<T>>
 			final long dim0 = rai.dimension(0);
 			final long dim1 = rai.dimension(1);
 			final long dim2 = rai.dimension(2);
-			rai1 = op.transform().interval(//
-				op.transform().translate(rai1, 50, -20, 0), //
+			rai1 = op.transform().intervalView(//
+				op.transform().translateView(rai1, 50, -20, 0), //
 				FinalInterval.createMinSize(50, -20, 0, dim0, dim1, dim2));
-			rai2 = op.transform().interval(//
-				op.transform().translate(rai2, -80, 150, 0), //
+			rai2 = op.transform().intervalView(//
+				op.transform().translateView(rai2, -80, 150, 0), //
 				FinalInterval.createMinSize(-80, 150, 0, dim0, dim1, dim2));
 		}
 
 		if (scaleImages) {
 			final double[] scale = { 3.5, 3.5, 1 };
-			rai1 = op.transform().scale(rai1, scale,
+			rai1 = op.transform().scaleView(rai1, scale,
 				new LanczosInterpolatorFactory<>());
-			rai2 = op.transform().scale(rai2, scale,
+			rai2 = op.transform().scaleView(rai2, scale,
 				new NLinearInterpolatorFactory<>());
 		}
 
