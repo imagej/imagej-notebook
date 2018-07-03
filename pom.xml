@@ -5,13 +5,13 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>18.0.0</version>
+		<version>23.2.0</version>
 		<relativePath />
 	</parent>
 
 	<groupId>net.imagej</groupId>
 	<artifactId>imagej-notebook</artifactId>
-	<version>0.2.4-SNAPSHOT</version>
+	<version>0.3.0-SNAPSHOT</version>
 
 	<name>ImageJ Notebook</name>
 	<description>Functions for working with ImageJ in scientific notebook software.</description>
@@ -82,6 +82,12 @@ Wisconsin-Madison.</license.copyrightOwners>
 
 		<!-- NB: Deploy releases to the ImageJ Maven repository. -->
 		<releaseProfiles>deploy-to-imagej</releaseProfiles>
+
+		<!-- NB: antlr-runtime depends on treelayout but shadows some classes -->
+		<allowedDuplicateClasses>org.abego.treelayout.*</allowedDuplicateClasses>
+
+		<jvm-repr.version>0.2.1</jvm-repr.version>
+		<beaker-kernel-base.version>1.0.0</beaker-kernel-base.version>
 	</properties>
 
 	<repositories>
@@ -112,6 +118,20 @@ Wisconsin-Madison.</license.copyrightOwners>
 		<dependency>
 			<groupId>org.scijava</groupId>
 			<artifactId>scijava-common</artifactId>
+		</dependency>
+
+		<!-- Provided scope dependencies -->
+		<dependency>
+			<groupId>com.github.jupyter</groupId>
+			<artifactId>jvm-repr</artifactId>
+			<version>${jvm-repr.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.github.twosigma.beakerx</groupId>
+			<artifactId>beaker-kernel-base</artifactId>
+			<version>${beaker-kernel-base.version}</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<!-- Test scope dependencies -->
