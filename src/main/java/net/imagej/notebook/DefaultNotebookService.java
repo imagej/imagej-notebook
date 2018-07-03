@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,7 +33,6 @@ package net.imagej.notebook;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -58,6 +57,7 @@ import net.imglib2.util.IntervalIndexer;
 import net.imglib2.util.Pair;
 import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
+import net.imglib2.view.Views;
 
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -80,9 +80,8 @@ public class DefaultNotebookService extends AbstractService implements
 
 	@Override
 	public <T extends RealType<T>> Object display(
-		final RandomAccessibleInterval<T> source, //
-		final int xAxis, final int yAxis, final int cAxis, //
-		final ValueScaling scaling, final long... pos)
+		final RandomAccessibleInterval<T> source, final int xAxis, final int yAxis,
+		final int cAxis, final double min, final double max, final long... pos)
 	{
 		final IntervalView<T> image = ops.transform().zeroMinView(source);
 
@@ -91,23 +90,6 @@ public class DefaultNotebookService extends AbstractService implements
 		final int c = cAxis >= 0 ? (int) image.dimension(cAxis) : 1;
 		final ARGBScreenImage target = new ARGBScreenImage(w, h);
 		final ArrayList<Converter<T, ARGBType>> converters = new ArrayList<>(c);
-
-		final double min, max;
-		final boolean full = scaling == ValueScaling.FULL || //
-			scaling == ValueScaling.AUTO && isNarrowType(source);
-
-		if (full) {
-			// scale the intensities based on the full range of the type
-			min = image.firstElement().getMinValue();
-			max = image.firstElement().getMaxValue();
-		}
-		else {
-			// scale the intensities based on the sample values
-			final IterableInterval<T> ii = ops.transform().flatIterableView(source);
-			final Pair<T, T> minMax = ops.stats().minMax(ii);
-			min = minMax.getA().getRealDouble();
-			max = minMax.getB().getRealDouble();
-		}
 
 		for (int i = 0; i < c; i++) {
 			final ColorTable8 lut = c == 1 ? //
@@ -119,7 +101,38 @@ public class DefaultNotebookService extends AbstractService implements
 		if (pos != null && pos.length > 0) proj.setPosition(pos);
 		proj.setComposite(true);
 		proj.map();
+
 		return target.image();
+
+	}
+
+	@Override
+	public <T extends RealType<T>> Object display(
+		final RandomAccessibleInterval<T> source, //
+		final int xAxis, final int yAxis, final int cAxis, //
+		final ValueScaling scaling, final long... pos)
+	{
+		final double min, max;
+		final boolean full = scaling == ValueScaling.FULL || //
+			scaling == ValueScaling.AUTO && isNarrowType(source);
+
+		final T firstElement = Views.iterable(source).firstElement();
+
+		if (full) {
+			// scale the intensities based on the full range of the type
+			min = firstElement.getMinValue();
+			max = firstElement.getMaxValue();
+		}
+		else {
+			// scale the intensities based on the sample values
+			final IterableInterval<T> ii = ops.transform().flatIterableView(source);
+			final Pair<T, T> minMax = ops.stats().minMax(ii);
+			min = minMax.getA().getRealDouble();
+			max = minMax.getB().getRealDouble();
+		}
+
+		return display(source, xAxis, yAxis, cAxis, min, max, pos);
+
 	}
 
 	@Override
@@ -193,12 +206,14 @@ public class DefaultNotebookService extends AbstractService implements
 			for (int d = 0; d < numDims; d++)
 				offset[d] = offsets[d][pos[d]];
 			final IntervalView<T> translated = //
-				ops.transform().translateView(ops.transform().zeroMinView(images[i]), offset);
+				ops.transform().translateView(ops.transform().zeroMinView(images[i]),
+					offset);
 
 			// Declare that all values outside the interval proper will be 0.
 			// If we do not perform this step, we will get an error when querying
 			// out-of-bounds coordinates.
-			final RandomAccessible<T> extended = ops.transform().extendZeroView(translated);
+			final RandomAccessible<T> extended = ops.transform().extendZeroView(
+				translated);
 
 			// Define the interval of the image to match the size of the mosaic.
 			final RandomAccessibleInterval<T> expanded = //
@@ -219,23 +234,19 @@ public class DefaultNotebookService extends AbstractService implements
 
 		final Method[] methods = type.getMethods();
 		// NB: Methods are returned in inconsistent order.
-		Arrays.sort(methods, new Comparator<Method>() {
-
-			@Override
-			public int compare(final Method m1, final Method m2) {
-				final int nameComp = m1.getName().compareTo(m2.getName());
-				if (nameComp != 0) return nameComp;
-				final int pCount1 = m1.getParameterCount();
-				final int pCount2 = m2.getParameterCount();
-				if (pCount1 != pCount2) return pCount1 - pCount2;
-				final Class<?>[] pTypes1 = m1.getParameterTypes();
-				final Class<?>[] pTypes2 = m2.getParameterTypes();
-				for (int i = 0; i < pTypes1.length; i++) {
-					final int typeComp = ClassUtils.compare(pTypes1[i], pTypes2[i]);
-					if (typeComp != 0) return typeComp;
-				}
-				return ClassUtils.compare(m1.getReturnType(), m2.getReturnType());
+		Arrays.sort(methods, (m1, m2) -> {
+			final int nameComp = m1.getName().compareTo(m2.getName());
+			if (nameComp != 0) return nameComp;
+			final int pCount1 = m1.getParameterCount();
+			final int pCount2 = m2.getParameterCount();
+			if (pCount1 != pCount2) return pCount1 - pCount2;
+			final Class<?>[] pTypes1 = m1.getParameterTypes();
+			final Class<?>[] pTypes2 = m2.getParameterTypes();
+			for (int i = 0; i < pTypes1.length; i++) {
+				final int typeComp = ClassUtils.compare(pTypes1[i], pTypes2[i]);
+				if (typeComp != 0) return typeComp;
 			}
+			return ClassUtils.compare(m1.getReturnType(), m2.getReturnType());
 		});
 
 		for (final Method m : methods) {
@@ -268,4 +279,5 @@ public class DefaultNotebookService extends AbstractService implements
 	{
 		return Util.getTypeFromInterval(source).getBitsPerPixel() <= 8;
 	}
+
 }

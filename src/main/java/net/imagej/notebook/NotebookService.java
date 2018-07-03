@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -83,7 +83,7 @@ public interface NotebookService extends ImageJService {
 
 	/**
 	 * Converts the given image to a form renderable by scientific notebooks.
-	 * 
+	 *
 	 * @param source The image to render.
 	 * @return an object that the notebook knows how to draw onscreen.
 	 */
@@ -97,7 +97,7 @@ public interface NotebookService extends ImageJService {
 
 	/**
 	 * Converts the given image to a form renderable by scientific notebooks.
-	 * 
+	 *
 	 * @param source The image to render.
 	 * @return an object that the notebook knows how to draw onscreen.
 	 */
@@ -117,6 +117,27 @@ public interface NotebookService extends ImageJService {
 	 * Converts the given image to a form renderable by scientific notebooks.
 	 *
 	 * @param source The image to render.
+	 * @param min The minimum value allowed on the display.
+	 * @param max The maximum value allowed on the display.
+	 * @return an object that the notebook knows how to draw onscreen.
+	 */
+	default <T extends RealType<T>> Object display(
+		final RandomAccessibleInterval<T> source, final double min,
+		final double max)
+	{
+		// NB: Assume <=3 samples in the 3rd dimension means channels. Of course,
+		// we have no metadata with a vanilla RAI, but this is a best guess;
+		// 3rd dimensions with >3 samples are probably something like Z or time.
+		final int cAxis = //
+			source.numDimensions() > 2 && source.dimension(2) <= 3 ? 2 : -1;
+
+		return display(source, 0, 1, cAxis, min, max);
+	}
+
+	/**
+	 * Converts the given image to a form renderable by scientific notebooks.
+	 *
+	 * @param source The image to render.
 	 * @param xAxis The image dimension to use for the X axis.
 	 * @param yAxis The image dimension to use for the Y axis.
 	 * @param cAxis The image dimension to use for compositing multiple channels,
@@ -128,6 +149,23 @@ public interface NotebookService extends ImageJService {
 	 */
 	<T extends RealType<T>> Object display(RandomAccessibleInterval<T> source,
 		int xAxis, int yAxis, int cAxis, ValueScaling scaling, long... pos);
+
+	/**
+	 * Converts the given image to a form renderable by scientific notebooks.
+	 *
+	 * @param source The image to render.
+	 * @param xAxis The image dimension to use for the X axis.
+	 * @param yAxis The image dimension to use for the Y axis.
+	 * @param cAxis The image dimension to use for compositing multiple channels,
+	 *          or -1 for no compositing.
+	 * @param min The minimum value allowed on the display
+	 * @param max The maximum value allowed on the display
+	 * @param pos Dimensional position of the image. Passing null or the empty
+	 *          array will display the default (typically the first) position.
+	 * @return an object that the notebook knows how to draw onscreen.
+	 */
+	<T extends RealType<T>> Object display(RandomAccessibleInterval<T> source,
+		int xAxis, int yAxis, int cAxis, double min, double max, long... pos);
 
 	/**
 	 * Organizes the given list of images into an N-dimensional mosaic.
@@ -172,7 +210,7 @@ public interface NotebookService extends ImageJService {
 
 	/**
 	 * Outputs a table of public methods for the given object.
-	 * 
+	 *
 	 * @param o The object for which to generate a table of its methods.
 	 * @return a table of the object's public methods.
 	 */
@@ -183,7 +221,7 @@ public interface NotebookService extends ImageJService {
 
 	/**
 	 * Outputs a table of public methods for the given object.
-	 * 
+	 *
 	 * @param o The object for which to generate a table of its methods.
 	 * @param prefix The starting characters to use for limiting method names.
 	 * @return a table of the object's public methods.
@@ -195,7 +233,7 @@ public interface NotebookService extends ImageJService {
 
 	/**
 	 * Outputs a table of public methods for the given class.
-	 * 
+	 *
 	 * @param type The class for which to generate a table of its methods.
 	 * @return a table of the class's public methods.
 	 */
@@ -205,7 +243,7 @@ public interface NotebookService extends ImageJService {
 
 	/**
 	 * Outputs a table of public methods for the given class.
-	 * 
+	 *
 	 * @param type The class for which to generate a table of its methods.
 	 * @param prefix The starting characters to use for limiting method names.
 	 * @return a table of the class's public methods.
