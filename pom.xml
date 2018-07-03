@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
@@ -77,11 +79,14 @@
 
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>Board of Regents of the University of
-Wisconsin-Madison.</license.copyrightOwners>
-		<license.projectName>ImageJ software for multidimensional image processing and analysis.</license.projectName>
+			Wisconsin-Madison.</license.copyrightOwners>
+		<license.projectName>ImageJ software for multidimensional image
+			processing and analysis.</license.projectName>
 
 		<!-- NB: Deploy releases to the ImageJ Maven repository. -->
 		<releaseProfiles>deploy-to-imagej</releaseProfiles>
+		<jvm-repr.version>0.2.1</jvm-repr.version>
+		<beaker-kernel-base.version>1.0.0</beaker-kernel-base.version>
 	</properties>
 
 	<repositories>
@@ -112,6 +117,17 @@ Wisconsin-Madison.</license.copyrightOwners>
 		<dependency>
 			<groupId>org.scijava</groupId>
 			<artifactId>scijava-common</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.twosigma.beakerx</groupId>
+			<artifactId>beaker-kernel-base</artifactId>
+			<version>${beaker-kernel-base.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.jupyter</groupId>
+			<artifactId>jvm-repr</artifactId>
+			<version>${jvm-repr.version}</version>
 		</dependency>
 
 		<!-- Test scope dependencies -->

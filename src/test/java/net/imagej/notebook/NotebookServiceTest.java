@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -38,6 +38,7 @@ import java.util.LinkedHashMap;
 
 import net.imagej.Dataset;
 import net.imagej.DatasetService;
+import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
@@ -89,6 +90,52 @@ public class NotebookServiceTest {
 		assertSameImageDetails(img, rendered);
 	}
 
+	/**
+	 * Tests {@link NotebookServivce#display(RandomAccessibleInterval, double min,
+	 * double max)}.
+	 */
+	@Test
+	public void testDisplayRAIClamped() {
+		// create img
+		final ArrayImg<UnsignedByteType, ByteArray> actual = createTestImg();
+		final ArrayImg<UnsignedByteType, ByteArray> expected = createTestImg();
+
+		// max and min values that we want to clamp to
+		final int min = 10;
+		final int max = 20;
+
+		// max, min, and range of the type
+		final int typeMin = (int) expected.firstElement().getMinValue();
+		final int typeMax = (int) expected.firstElement().getMaxValue();
+		final int range = typeMax - typeMin + 1;
+
+		// create ramp on image to be displayed
+		final Cursor<UnsignedByteType> cursor = actual.cursor();
+		final UnsignedByteType nextVal = new UnsignedByteType((byte) 0);
+
+		while (cursor.hasNext()) {
+			cursor.fwd();
+			nextVal.set(cursor.getIntPosition(0) / 2 * (cursor.getIntPosition(1) /
+				2));
+			cursor.get().set(nextVal);
+		}
+
+		// create displayed ramp
+		final Cursor<UnsignedByteType> expectedCursor = expected.cursor();
+		while (expectedCursor.hasNext()) {
+			expectedCursor.fwd();
+			final double currentVal = expectedCursor.getIntPosition(0) / 2 *
+				(expectedCursor.getIntPosition(1) / 2);
+			double casted = (currentVal - min) / (max - min) * range;
+			if (casted > typeMax) casted = typeMax;
+			if (casted < typeMin) casted = typeMin;
+			expectedCursor.get().set((int) casted);
+		}
+
+		final Object rendered = ns.display(actual, min, max);
+		assertSameImageDetails(expected, rendered);
+	}
+
 	@Test
 	public void testMethods() {
 		final NotebookTable table = ns.methods(java.lang.Object.class);
@@ -133,9 +180,9 @@ public class NotebookServiceTest {
 				final int value = data[index] & 0xff;
 				final int rgb = bi.getRGB(x, y);
 				final int r = rgb & 0xff;
-				final int g = (rgb << 8) & 0xff;
-				final int b = (rgb << 16) & 0xff;
-				final int a = (rgb << 24) & 0xff;
+				final int g = rgb << 8 & 0xff;
+				final int b = rgb << 16 & 0xff;
+				final int a = rgb << 24 & 0xff;
 				assertEquals(value, r);
 				assertEquals(0, g);
 				assertEquals(0, b);
