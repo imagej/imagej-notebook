@@ -81,7 +81,7 @@ public class DefaultNotebookService extends AbstractService implements
 	@Override
 	public <T extends RealType<T>> Object display(
 		final RandomAccessibleInterval<T> source, final int xAxis, final int yAxis,
-		final int cAxis, final double min, final double max, final long... pos)
+		final int cAxis, final double min[], final double[] max, final long... pos)
 	{
 		final IntervalView<T> image = ops.transform().zeroMinView(source);
 
@@ -91,10 +91,13 @@ public class DefaultNotebookService extends AbstractService implements
 		final ARGBScreenImage target = new ARGBScreenImage(w, h);
 		final ArrayList<Converter<T, ARGBType>> converters = new ArrayList<>(c);
 
+		if (min.length != c || max.length != c) throw new IllegalArgumentException(
+			"clamping arrays must be of the same length as the number of channels!");
+
 		for (int i = 0; i < c; i++) {
 			final ColorTable8 lut = c == 1 ? //
 				ColorTables.GRAYS : ColorTables.getDefaultColorTable(i);
-			converters.add(new RealLUTConverter<T>(min, max, lut));
+			converters.add(new RealLUTConverter<T>(min[i], max[i], lut));
 		}
 		final CompositeXYProjector<T> proj = new CompositeXYProjector<>(image,
 			target, converters, cAxis);
@@ -131,7 +134,16 @@ public class DefaultNotebookService extends AbstractService implements
 			max = minMax.getB().getRealDouble();
 		}
 
-		return display(source, xAxis, yAxis, cAxis, min, max, pos);
+		// create arrays from generated min/max
+		final int arraySize = cAxis >= 0 ? (int) source.dimension(cAxis) : 1;
+		final double[] minArray = new double[arraySize];
+		final double[] maxArray = new double[arraySize];
+		for (int i = 0; i < minArray.length; i++) {
+			minArray[i] = min;
+			maxArray[i] = max;
+		}
+
+		return display(source, xAxis, yAxis, cAxis, minArray, maxArray, pos);
 
 	}
 
