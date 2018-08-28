@@ -7,13 +7,13 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>18.0.0</version>
+		<version>23.1.1</version>
 		<relativePath />
 	</parent>
 
 	<groupId>net.imagej</groupId>
 	<artifactId>imagej-notebook</artifactId>
-	<version>0.2.4-SNAPSHOT</version>
+	<version>0.3.0-SNAPSHOT</version>
 
 	<name>ImageJ Notebook</name>
 	<description>Functions for working with ImageJ in scientific notebook software.</description>
@@ -87,6 +87,9 @@
 		<releaseProfiles>deploy-to-imagej</releaseProfiles>
 		<jvm-repr.version>0.2.1</jvm-repr.version>
 		<beaker-kernel-base.version>1.0.0</beaker-kernel-base.version>
+
+		<!-- NB: antlr-runtime depends on treelayout but shadows some classes -->
+		<allowedDuplicateClasses>org.abego.treelayout.*</allowedDuplicateClasses>
 	</properties>
 
 	<repositories>
