@@ -30,21 +30,12 @@
 
 package net.imagej.notebook;
 
-import com.twosigma.beakerx.mimetype.MIMEContainer;
-import com.twosigma.beakerx.util.Images;
-
 import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import net.imagej.display.ColorTables;
@@ -78,9 +69,6 @@ import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 import org.scijava.util.ClassUtils;
 
-import jupyter.Displayer;
-import jupyter.Displayers;
-
 /**
  * AWT-driven implementation of {@link NotebookService}.
  *
@@ -96,83 +84,19 @@ public class DefaultNotebookService extends AbstractService implements
 
 	@Override
 	public void initialize() {
-		register(RandomAccessibleInterval.class, (map, image) -> {
-			map.put(MIMEContainer.MIME.IMAGE_PNG, encodeImage(image));
-		});
+		try {
+			BeakerX.register(RandomAccessibleInterval.class, (map, image) -> {
+				map.put("image/png", encodeImage(image));
+			});
 
-		register(DatasetView.class, (map, imageView) -> {
-			map.put(MIMEContainer.MIME.IMAGE_PNG, //
-				base64(imageView.getScreenImage().image()));
-		});
-	}
-
-	// -- Helper methods for specific types being displayed --
-
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private String encodeImage(final RandomAccessibleInterval<?> image)
-		throws IOException
-	{
-		final Object element = Util.getTypeFromInterval(image);
-
-		if (element instanceof ARGBType) {
-			return encodeARGBTypeImage((RandomAccessibleInterval) image);
+			BeakerX.register(DatasetView.class, (map, imageView) -> {
+				map.put("image/png", //
+					BeakerX.base64(imageView.getScreenImage().image()));
+			});
 		}
-		else if (element instanceof RealType) {
-			return encodeRealTypeImage((RandomAccessibleInterval) image);
+		catch (final NoClassDefFoundError exc) {
+			// NB: BeakerX is not available; ignore.
 		}
-		else {
-			throw new IllegalArgumentException("Unsupported image type: " + element
-				.getClass().getName());
-		}
-	}
-
-	private String encodeARGBTypeImage(
-		final RandomAccessibleInterval<ARGBType> image) throws IOException
-	{
-		// NB: ignoring alpha
-		return encodeRealTypeImage(Converters.argbChannels(image, 1, 2, 3));
-	}
-
-	private <T extends RealType<T>> String encodeRealTypeImage(
-		final RandomAccessibleInterval<T> image) throws IOException
-	{
-		final BufferedImage bi = (BufferedImage) DefaultNotebookService.this
-			.display(image);
-		return base64(bi);
-	}
-
-	private String base64(final RenderedImage image) throws IOException {
-		final byte[] data = Images.encode(image);
-		return Base64.getEncoder().encodeToString(data);
-	}
-
-	// -- Registration machinery --
-
-	public interface DisplayerPopulator<T> {
-
-		void populate(Map<String, String> map, T object) throws Exception;
-	}
-
-	public static <T> void register(final Class<T> clazz,
-		final DisplayerPopulator<T> populator)
-	{
-		Displayers.register(clazz, new Displayer<T>() {
-
-			@Override
-			public Map<String, String> display(final T object) {
-				final HashMap<String, String> m = new HashMap<>();
-				try {
-					populator.populate(m, object);
-				}
-				catch (final Exception exc) {
-					final StringWriter sw = new StringWriter();
-					exc.printStackTrace(new PrintWriter(sw));
-					m.put(MIMEContainer.MIME.TEXT_HTML, "<div><pre>" + sw.toString() +
-						"</pre></div>");
-				}
-				return m;
-			}
-		});
 	}
 
 	// -- Public API --
@@ -388,6 +312,39 @@ public class DefaultNotebookService extends AbstractService implements
 		final RandomAccessibleInterval<T> source)
 	{
 		return Util.getTypeFromInterval(source).getBitsPerPixel() <= 8;
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private String encodeImage(final RandomAccessibleInterval<?> image)
+		throws IOException
+	{
+		final Object element = Util.getTypeFromInterval(image);
+
+		if (element instanceof ARGBType) {
+			return encodeARGBTypeImage((RandomAccessibleInterval) image);
+		}
+		else if (element instanceof RealType) {
+			return encodeRealTypeImage((RandomAccessibleInterval) image);
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported image type: " + element
+				.getClass().getName());
+		}
+	}
+
+	private String encodeARGBTypeImage(
+		final RandomAccessibleInterval<ARGBType> image) throws IOException
+	{
+		// NB: ignoring alpha
+		return encodeRealTypeImage(Converters.argbChannels(image, 1, 2, 3));
+	}
+
+	private <T extends RealType<T>> String encodeRealTypeImage(
+		final RandomAccessibleInterval<T> image) throws IOException
+	{
+		final BufferedImage bi = (BufferedImage) DefaultNotebookService.this
+			.display(image);
+		return BeakerX.base64(bi);
 	}
 
 }
