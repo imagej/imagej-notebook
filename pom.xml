@@ -88,6 +88,7 @@ Wisconsin-Madison.</license.copyrightOwners>
 
 		<jvm-repr.version>0.2.1</jvm-repr.version>
 		<beaker-kernel-base.version>1.0.0</beaker-kernel-base.version>
+		<scijava-table.version>0.3.0</scijava-table.version>
 	</properties>
 
 	<repositories>

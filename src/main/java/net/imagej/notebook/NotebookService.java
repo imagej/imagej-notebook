@@ -30,11 +30,16 @@
 
 package net.imagej.notebook;
 
+import java.util.List;
+import java.util.Map;
+
 import net.imagej.Dataset;
 import net.imagej.ImageJService;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+
+import org.scijava.table.Tables;
 
 /**
  * Interface for services which provide handy methods for working with
@@ -86,6 +91,31 @@ public interface NotebookService extends ImageJService {
 	 * @return an object that the notebook knows how to draw onscreen.
 	 */
 	Object display(Object source);
+
+	/**
+	 * Converts the given table to a form renderable by scientific notebooks.
+	 *
+	 * @param table The table to render. Each list element is a row; maps go from
+	 *          column name to data.
+	 * @return an object that the notebook knows how to draw onscreen.
+	 */
+	default <T> Object display(final List<? extends Map<?, T>> table) {
+		return display(table, null);
+	}
+
+	/**
+	 * Converts the given table to a form renderable by scientific notebooks.
+	 *
+	 * @param table The table to render. Each list element is a row; maps go from
+	 *          column name to data.
+	 * @param rowHeaders List of row header labels. Pass null for no row headers.
+	 * @return an object that the notebook knows how to draw onscreen.
+	 */
+	default <T> Object display(final List<? extends Map<?, T>> table,
+		final List<String> rowHeaders)
+	{
+		return display(Tables.wrap(table, rowHeaders));
+	}
 
 	/**
 	 * Converts the given image to a form renderable by scientific notebooks.
