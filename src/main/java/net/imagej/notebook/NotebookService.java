@@ -52,36 +52,36 @@ public interface NotebookService extends ImageJService {
 
 	/** Strategy to use for scaling the image intensity values. */
 	enum ValueScaling {
-			/**
-			 * Scales the display according to a "best effort": "narrow" types with
-			 * few sample values (e.g., {@code bit}, {@code uint2}, {@code uint4} and
-			 * {@code uint8}) are scaled according to the {@code FULL} strategy,
-			 * whereas "wide" types with many possible values (e.g., {@code uint16},
-			 * {@code float32} and {@code float64}) are scaled according to the
-			 * {@code DATA} strategy.
-			 * <p>
-			 * That rationale is that people are accustomed to seeing narrow image
-			 * types rendered across the full range, whereas wide image types
-			 * typically do not empass the entire range of the type and rendering them
-			 * as such results in image which appear all or mostly black or gray.
-			 * </p>
-			 */
-			AUTO,
+		/**
+		 * Scales the display according to a "best effort": "narrow" types with few
+		 * sample values (e.g., {@code bit}, {@code uint2}, {@code uint4} and
+		 * {@code uint8}) are scaled according to the {@code FULL} strategy, whereas
+		 * "wide" types with many possible values (e.g., {@code uint16},
+		 * {@code float32} and {@code float64}) are scaled according to the
+		 * {@code DATA} strategy.
+		 * <p>
+		 * That rationale is that people are accustomed to seeing narrow image types
+		 * rendered across the full range, whereas wide image types typically do not
+		 * empass the entire range of the type and rendering them as such results in
+		 * image which appear all or mostly black or gray.
+		 * </p>
+		 */
+		AUTO,
 
-			/**
-			 * Scales the display to match the bounds of the data type. For example,
-			 * {@code uint8} will be scaled to 0-255, regardless of the actual data
-			 * values.
-			 */
-			FULL,
+		/**
+		 * Scales the display to match the bounds of the data type. For example,
+		 * {@code uint8} will be scaled to 0-255, regardless of the actual data
+		 * values.
+		 */
+		FULL,
 
-			/**
-			 * Scales the display to match the actual min and max values of the data.
-			 * For example, a {@code uint16} dataset with sample values ranging
-			 * between 139 and 3156 will map 139 to minimum intensity and 3156 to
-			 * maximum intensity.
-			 */
-			DATA
+		/**
+		 * Scales the display to match the actual min and max values of the data.
+		 * For example, a {@code uint16} dataset with sample values ranging between
+		 * 139 and 3156 will map 139 to minimum intensity and 3156 to maximum
+		 * intensity.
+		 */
+		DATA
 	}
 
 	/**
@@ -203,8 +203,9 @@ public interface NotebookService extends ImageJService {
 	 *          array will display the default (typically the first) position.
 	 * @return an object that the notebook knows how to draw onscreen.
 	 */
-	default <T extends RealType<T>> Object display(RandomAccessibleInterval<T> source,
-		int xAxis, int yAxis, int cAxis, double[] min, double[] max, long... pos)
+	default <T extends RealType<T>> Object display(
+		RandomAccessibleInterval<T> source, int xAxis, int yAxis, int cAxis,
+		double[] min, double[] max, long... pos)
 	{
 		return Images.bufferedImage(source, xAxis, yAxis, cAxis, min, max, pos);
 	}
