@@ -91,8 +91,8 @@ public class NotebookServiceTest {
 	}
 
 	/**
-	 * Tests {@link NotebookServivce#display(RandomAccessibleInterval, double min,
-	 * double max)}.
+	 * Tests
+	 * {@link NotebookService#display(RandomAccessibleInterval, double, double)}.
 	 */
 	@Test
 	public void testDisplayRAIClamped() {
