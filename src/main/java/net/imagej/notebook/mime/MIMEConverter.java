@@ -27,50 +27,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+package net.imagej.notebook.mime;
 
-package net.imagej.notebook;
-
-import com.twosigma.beakerx.mimetype.MIMEContainer;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
-
-import jupyter.Displayer;
-import jupyter.Displayers;
+import org.scijava.convert.AbstractConverter;
+import org.scijava.convert.Converter;
+import org.scijava.log.LogService;
+import org.scijava.plugin.Parameter;
+import org.scijava.util.Types;
 
 /**
- * Helper class to isolate the BeakerX dependencies.
- *
+ * Base class for plugins that convert things to {@link MIMEObject}s.
+ * 
  * @author Curtis Rueden
  */
-class BeakerX {
+public abstract class MIMEConverter<I, O extends MIMEObject> extends
+	AbstractConverter<I, O>
+{
 
-	public interface DisplayerPopulator<T> {
+	@Parameter
+	protected LogService log;
 
-		void populate(Map<String, String> map, T object) throws Exception;
+	@Override
+	public <T> T convert(final Object src, final Class<T> dest) {
+		if (!(getInputType().isInstance(src))) //
+			throw new IllegalArgumentException(src.getClass().getName() +
+				" is not an instance of " + getInputType().getName());
+		if (!dest.isAssignableFrom(getOutputType()))
+			throw new IllegalArgumentException(dest.getName() +
+				" is not assignable from " + getOutputType().getName());
+		@SuppressWarnings("unchecked")
+		final I typedSrc = (I) src;
+		@SuppressWarnings("unchecked")
+		final T result = (T) convert(typedSrc);
+		return result;
 	}
 
-	public static <T> void register(final Class<T> clazz,
-		final DisplayerPopulator<T> populator)
-	{
-		Displayers.register(clazz, new Displayer<T>() {
-
-			@Override
-			public Map<String, String> display(final T object) {
-				final HashMap<String, String> m = new HashMap<>();
-				try {
-					populator.populate(m, object);
-				}
-				catch (final Exception exc) {
-					final StringWriter sw = new StringWriter();
-					exc.printStackTrace(new PrintWriter(sw));
-					m.put(MIMEContainer.MIME.TEXT_HTML, "<div><pre>" + sw.toString() +
-						"</pre></div>");
-				}
-				return m;
-			}
-		});
+	@Override
+	@SuppressWarnings("unchecked")
+	public Class<O> getOutputType() {
+		return (Class<O>) Types.raw(Types.param(getClass(), Converter.class, 1));
 	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public Class<I> getInputType() {
+		return (Class<I>) Types.raw(Types.param(getClass(), Converter.class, 0));
+	}
+
+	protected abstract O convert(final I obj);
 }

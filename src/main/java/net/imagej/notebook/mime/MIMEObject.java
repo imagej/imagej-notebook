@@ -27,50 +27,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
+package net.imagej.notebook.mime;
 
-package net.imagej.notebook;
-
-import com.twosigma.beakerx.mimetype.MIMEContainer;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
-
-import jupyter.Displayer;
-import jupyter.Displayers;
+import java.io.IOException;
 
 /**
- * Helper class to isolate the BeakerX dependencies.
- *
+ * An object that knows how to encode itself as some sort of MIME type.
+ * 
  * @author Curtis Rueden
  */
-class BeakerX {
+public interface MIMEObject {
 
-	public interface DisplayerPopulator<T> {
+	/** MIME type of the encoded object. */
+	String mimeType();
 
-		void populate(Map<String, String> map, T object) throws Exception;
-	}
-
-	public static <T> void register(final Class<T> clazz,
-		final DisplayerPopulator<T> populator)
-	{
-		Displayers.register(clazz, new Displayer<T>() {
-
-			@Override
-			public Map<String, String> display(final T object) {
-				final HashMap<String, String> m = new HashMap<>();
-				try {
-					populator.populate(m, object);
-				}
-				catch (final Exception exc) {
-					final StringWriter sw = new StringWriter();
-					exc.printStackTrace(new PrintWriter(sw));
-					m.put(MIMEContainer.MIME.TEXT_HTML, "<div><pre>" + sw.toString() +
-						"</pre></div>");
-				}
-				return m;
-			}
-		});
-	}
+	/** The encoded data. */
+	String data() throws IOException;
 }

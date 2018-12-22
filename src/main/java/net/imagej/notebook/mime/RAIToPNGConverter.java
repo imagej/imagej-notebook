@@ -28,49 +28,59 @@
  * #L%
  */
 
-package net.imagej.notebook;
+package net.imagej.notebook.mime;
 
-import com.twosigma.beakerx.mimetype.MIMEContainer;
+import java.io.IOException;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
+import net.imagej.notebook.Images;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.converter.Converters;
+import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.Util;
 
-import jupyter.Displayer;
-import jupyter.Displayers;
+import org.scijava.convert.Converter;
+import org.scijava.plugin.Plugin;
 
 /**
- * Helper class to isolate the BeakerX dependencies.
+ * Converter from {@link RandomAccessibleInterval} to {@link PNGObject}.
  *
  * @author Curtis Rueden
  */
-class BeakerX {
+@Plugin(type = Converter.class)
+public class RAIToPNGConverter extends
+	MIMEConverter<RandomAccessibleInterval<?>, PNGObject>
+{
 
-	public interface DisplayerPopulator<T> {
+	@Override
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	protected PNGObject convert(final RandomAccessibleInterval<?> image) {
+		return () -> {
+			final Object element = Util.getTypeFromInterval(image);
 
-		void populate(Map<String, String> map, T object) throws Exception;
+			if (element instanceof ARGBType) {
+				return encodeARGBTypeImage((RandomAccessibleInterval<ARGBType>) image);
+			}
+			else if (element instanceof RealType) {
+				return encodeRealTypeImage((RandomAccessibleInterval) image);
+			}
+			else {
+				throw new IllegalArgumentException("Unsupported image type: " + //
+					element.getClass().getName());
+			}
+		};
 	}
 
-	public static <T> void register(final Class<T> clazz,
-		final DisplayerPopulator<T> populator)
+	private static String encodeARGBTypeImage(
+		final RandomAccessibleInterval<ARGBType> image) throws IOException
 	{
-		Displayers.register(clazz, new Displayer<T>() {
+		// NB: ignoring alpha
+		return encodeRealTypeImage(Converters.argbChannels(image, 1, 2, 3));
+	}
 
-			@Override
-			public Map<String, String> display(final T object) {
-				final HashMap<String, String> m = new HashMap<>();
-				try {
-					populator.populate(m, object);
-				}
-				catch (final Exception exc) {
-					final StringWriter sw = new StringWriter();
-					exc.printStackTrace(new PrintWriter(sw));
-					m.put(MIMEContainer.MIME.TEXT_HTML, "<div><pre>" + sw.toString() +
-						"</pre></div>");
-				}
-				return m;
-			}
-		});
+	private static <T extends RealType<T>> String encodeRealTypeImage(
+		final RandomAccessibleInterval<T> image) throws IOException
+	{
+		return Images.base64(Images.bufferedImage(image));
 	}
 }

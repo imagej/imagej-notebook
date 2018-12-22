@@ -28,49 +28,26 @@
  * #L%
  */
 
-package net.imagej.notebook;
+package net.imagej.notebook.mime;
 
-import com.twosigma.beakerx.mimetype.MIMEContainer;
+import net.imagej.display.DatasetView;
+import net.imagej.notebook.Images;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
-
-import jupyter.Displayer;
-import jupyter.Displayers;
+import org.scijava.convert.Converter;
+import org.scijava.plugin.Plugin;
 
 /**
- * Helper class to isolate the BeakerX dependencies.
+ * Converter from {@link DatasetView} to {@link PNGObject}.
  *
  * @author Curtis Rueden
  */
-class BeakerX {
+@Plugin(type = Converter.class)
+public class DatasetViewToPNGConverter extends
+	MIMEConverter<DatasetView, PNGObject>
+{
 
-	public interface DisplayerPopulator<T> {
-
-		void populate(Map<String, String> map, T object) throws Exception;
-	}
-
-	public static <T> void register(final Class<T> clazz,
-		final DisplayerPopulator<T> populator)
-	{
-		Displayers.register(clazz, new Displayer<T>() {
-
-			@Override
-			public Map<String, String> display(final T object) {
-				final HashMap<String, String> m = new HashMap<>();
-				try {
-					populator.populate(m, object);
-				}
-				catch (final Exception exc) {
-					final StringWriter sw = new StringWriter();
-					exc.printStackTrace(new PrintWriter(sw));
-					m.put(MIMEContainer.MIME.TEXT_HTML, "<div><pre>" + sw.toString() +
-						"</pre></div>");
-				}
-				return m;
-			}
-		});
+	@Override
+	protected PNGObject convert(final DatasetView imageView) {
+		return () -> Images.base64(imageView.getScreenImage().image());
 	}
 }

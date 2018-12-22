@@ -30,29 +30,26 @@
 
 package net.imagej.notebook;
 
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import net.imagej.display.DatasetView;
+import net.imagej.notebook.mime.MIMEObject;
 import net.imagej.ops.OpService;
 import net.imagej.ops.Ops;
 import net.imagej.ops.special.inplace.Inplaces;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.converter.Converters;
 import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.IntervalIndexer;
 import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
 
+import org.scijava.convert.ConvertService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
@@ -70,19 +67,34 @@ public class DefaultNotebookService extends AbstractService implements
 {
 
 	@Parameter
+	private ConvertService convertService;
+
+	@Parameter
 	private OpService ops;
 
 	@Override
 	public void initialize() {
 		try {
-			BeakerX.register(RandomAccessibleInterval.class, (map, image) -> {
-				map.put("image/png", encodeImage(image));
+			// Anything that implements MIMEObject can be displayed.
+			BeakerX.register(MIMEObject.class, (map, mimeObj) -> {
+				map.put(mimeObj.mimeType(), mimeObj.data());
 			});
 
-			BeakerX.register(DatasetView.class, (map, imageView) -> {
-				map.put("image/png", //
-					BeakerX.base64(imageView.getScreenImage().image()));
-			});
+			// Anything convertible to MIMEObject can also be displayed.
+			// TODO: Fix bug in ConvertService#getCompatibleInputClasses.
+			// It should check class assignability, not only exact equality.
+			final List<Class<?>> mimeFriendlyTypes = //
+				convertService.getInstances().stream() //
+					.filter(c -> MIMEObject.class.isAssignableFrom(c.getOutputType())) //
+					.map(c -> c.getInputType()) //
+					.collect(Collectors.toList());
+			for (final Class<?> mimeFriendlyType : mimeFriendlyTypes) {
+				BeakerX.register(mimeFriendlyType, (map, object) -> {
+					final MIMEObject mimeObj = //
+						convertService.convert(object, MIMEObject.class);
+					if (mimeObj != null) map.put(mimeObj.mimeType(), mimeObj.data());
+				});
+			}
 		}
 		catch (final NoClassDefFoundError exc) {
 			// NB: BeakerX is not available; ignore.
@@ -227,40 +239,4 @@ public class DefaultNotebookService extends AbstractService implements
 		}
 		return table;
 	}
-
-	// -- Helper methods --
-
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private String encodeImage(final RandomAccessibleInterval<?> image)
-		throws IOException
-	{
-		final Object element = Util.getTypeFromInterval(image);
-
-		if (element instanceof ARGBType) {
-			return encodeARGBTypeImage((RandomAccessibleInterval) image);
-		}
-		else if (element instanceof RealType) {
-			return encodeRealTypeImage((RandomAccessibleInterval) image);
-		}
-		else {
-			throw new IllegalArgumentException("Unsupported image type: " + element
-				.getClass().getName());
-		}
-	}
-
-	private String encodeARGBTypeImage(
-		final RandomAccessibleInterval<ARGBType> image) throws IOException
-	{
-		// NB: ignoring alpha
-		return encodeRealTypeImage(Converters.argbChannels(image, 1, 2, 3));
-	}
-
-	private <T extends RealType<T>> String encodeRealTypeImage(
-		final RandomAccessibleInterval<T> image) throws IOException
-	{
-		final BufferedImage bi = (BufferedImage) DefaultNotebookService.this
-			.display(image);
-		return BeakerX.base64(bi);
-	}
-
 }
