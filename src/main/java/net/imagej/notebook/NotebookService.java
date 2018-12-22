@@ -32,9 +32,7 @@ package net.imagej.notebook;
 
 import net.imagej.Dataset;
 import net.imagej.ImageJService;
-import net.imagej.axis.Axes;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 
@@ -87,22 +85,9 @@ public interface NotebookService extends ImageJService {
 	 * @param source The image to render.
 	 * @return an object that the notebook knows how to draw onscreen.
 	 */
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	default Object display(final Dataset source) {
-		return display((Img) source, //
-			source.dimensionIndex(Axes.X), //
-			source.dimensionIndex(Axes.Y), //
-			source.dimensionIndex(Axes.CHANNEL), ValueScaling.AUTO);
+		return Images.bufferedImage(source);
 	}
-//
-//	default Object displayARGB(final RandomAccessibleInterval<ARGBType> source) {
-//		if(source.numDimensions() != 2) throw new IllegalArgumentException("ARGB image must be two dimensional");
-//
-//		final FinalDimensions dims = new FinalDimensions(source.dimension(0), source.dimension(1), 3);
-//		final Converter<ARGBType, GenericComposite<UnsignedByteType>> converter = new Converter() {
-//			public void convert(ARGBType input, GenericComposite<UnsignedByteType> output)
-//		}
-//	}
 
 	/**
 	 * Converts the given image to a form renderable by scientific notebooks.
@@ -113,13 +98,7 @@ public interface NotebookService extends ImageJService {
 	default <T extends RealType<T>> Object display(
 		final RandomAccessibleInterval<T> source)
 	{
-		// NB: Assume <=3 samples in the 3rd dimension means channels. Of course,
-		// we have no metadata with a vanilla RAI, but this is a best guess;
-		// 3rd dimensions with >3 samples are probably something like Z or time.
-		final int cAxis = //
-			source.numDimensions() > 2 && source.dimension(2) <= 3 ? 2 : -1;
-
-		return display(source, 0, 1, cAxis, ValueScaling.AUTO);
+		return Images.bufferedImage(source);
 	}
 
 	/**
@@ -134,45 +113,22 @@ public interface NotebookService extends ImageJService {
 		final RandomAccessibleInterval<T> source, final double min,
 		final double max)
 	{
-		// NB: Assume <=3 samples in the 3rd dimension means channels. Of course,
-		// we have no metadata with a vanilla RAI, but this is a best guess;
-		// 3rd dimensions with >3 samples are probably something like Z or time.
-		final int cAxis = //
-			source.numDimensions() > 2 && source.dimension(2) <= 3 ? 2 : -1;
-		// This cast to int is safe since we know from the above condition that -1
-		// <= cAxis <= 3
-		final int channels = cAxis >= 0 ? (int) source.dimension(cAxis) : 1;
-
-		final double[] minArray = new double[channels];
-		final double[] maxArray = new double[channels];
-
-		for (int i = 0; i < minArray.length; i++) {
-			minArray[i] = min;
-			maxArray[i] = max;
-		}
-
-		return display(source, 0, 1, cAxis, minArray, maxArray);
+		return Images.bufferedImage(source, min, max);
 	}
 
 	/**
 	 * Converts the given image to a form renderable by scientific notebooks.
 	 *
 	 * @param source The image to render.
-	 * @param min The minimum value allowed on the display.
-	 * @param max The maximum value allowed on the display.
+	 * @param min The minimum value per dimension allowed on the display.
+	 * @param max The maximum value per dimension allowed on the display.
 	 * @return an object that the notebook knows how to draw onscreen.
 	 */
 	default <T extends RealType<T>> Object display(
 		final RandomAccessibleInterval<T> source, final double[] min,
 		final double[] max)
 	{
-		// NB: Assume <=3 samples in the 3rd dimension means channels. Of course,
-		// we have no metadata with a vanilla RAI, but this is a best guess;
-		// 3rd dimensions with >3 samples are probably something like Z or time.
-		final int cAxis = //
-			source.numDimensions() > 2 && source.dimension(2) <= 3 ? 2 : -1;
-
-		return display(source, 0, 1, cAxis, min, max);
+		return Images.bufferedImage(source, min, max);
 	}
 
 	/**
@@ -188,8 +144,12 @@ public interface NotebookService extends ImageJService {
 	 *          array will display the default (typically the first) position.
 	 * @return an object that the notebook knows how to draw onscreen.
 	 */
-	<T extends RealType<T>> Object display(RandomAccessibleInterval<T> source,
-		int xAxis, int yAxis, int cAxis, ValueScaling scaling, long... pos);
+	default <T extends RealType<T>> Object display(
+		RandomAccessibleInterval<T> source, int xAxis, int yAxis, int cAxis,
+		ValueScaling scaling, long... pos)
+	{
+		return Images.bufferedImage(source, xAxis, yAxis, cAxis, scaling, pos);
+	}
 
 	/**
 	 * Converts the given image to a form renderable by scientific notebooks.
@@ -199,14 +159,17 @@ public interface NotebookService extends ImageJService {
 	 * @param yAxis The image dimension to use for the Y axis.
 	 * @param cAxis The image dimension to use for compositing multiple channels,
 	 *          or -1 for no compositing.
-	 * @param min The minimum value allowed on the display
-	 * @param max The maximum value allowed on the display
+	 * @param min The minimum value per dimension allowed on the display
+	 * @param max The maximum value per dimension allowed on the display
 	 * @param pos Dimensional position of the image. Passing null or the empty
 	 *          array will display the default (typically the first) position.
 	 * @return an object that the notebook knows how to draw onscreen.
 	 */
-	<T extends RealType<T>> Object display(RandomAccessibleInterval<T> source,
-		int xAxis, int yAxis, int cAxis, double[] min, double[] max, long... pos);
+	default <T extends RealType<T>> Object display(RandomAccessibleInterval<T> source,
+		int xAxis, int yAxis, int cAxis, double[] min, double[] max, long... pos)
+	{
+		return Images.bufferedImage(source, xAxis, yAxis, cAxis, min, max, pos);
+	}
 
 	/**
 	 * Organizes the given list of images into an N-dimensional mosaic.

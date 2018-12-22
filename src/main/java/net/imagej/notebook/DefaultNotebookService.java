@@ -33,35 +33,25 @@ package net.imagej.notebook;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import net.imagej.display.ColorTables;
 import net.imagej.display.DatasetView;
 import net.imagej.ops.OpService;
 import net.imagej.ops.Ops;
 import net.imagej.ops.special.inplace.Inplaces;
 import net.imglib2.FinalInterval;
-import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.converter.Converter;
 import net.imglib2.converter.Converters;
-import net.imglib2.converter.RealLUTConverter;
-import net.imglib2.display.ColorTable8;
-import net.imglib2.display.projector.composite.CompositeXYProjector;
-import net.imglib2.display.screenimage.awt.ARGBScreenImage;
 import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.IntervalIndexer;
-import net.imglib2.util.Pair;
 import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
-import net.imglib2.view.Views;
 
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -100,74 +90,6 @@ public class DefaultNotebookService extends AbstractService implements
 	}
 
 	// -- Public API --
-
-	@Override
-	public <T extends RealType<T>> Object display(
-		final RandomAccessibleInterval<T> source, final int xAxis, final int yAxis,
-		final int cAxis, final double[] min, final double[] max, final long... pos)
-	{
-		final IntervalView<T> image = ops.transform().zeroMinView(source);
-
-		final int w = xAxis >= 0 ? (int) image.dimension(xAxis) : 1;
-		final int h = yAxis >= 0 ? (int) image.dimension(yAxis) : 1;
-		final int c = cAxis >= 0 ? (int) image.dimension(cAxis) : 1;
-		final ARGBScreenImage target = new ARGBScreenImage(w, h);
-		final ArrayList<Converter<T, ARGBType>> converters = new ArrayList<>(c);
-
-		if (min.length != c || max.length != c) throw new IllegalArgumentException(
-			"clamping arrays must be of the same length as the number of channels!");
-
-		for (int i = 0; i < c; i++) {
-			final ColorTable8 lut = c == 1 ? //
-				ColorTables.GRAYS : ColorTables.getDefaultColorTable(i);
-			converters.add(new RealLUTConverter<T>(min[i], max[i], lut));
-		}
-		final CompositeXYProjector<T> proj = new CompositeXYProjector<>(image,
-			target, converters, cAxis);
-		if (pos != null && pos.length > 0) proj.setPosition(pos);
-		proj.setComposite(true);
-		proj.map();
-
-		return target.image();
-
-	}
-
-	@Override
-	public <T extends RealType<T>> Object display(
-		final RandomAccessibleInterval<T> source, //
-		final int xAxis, final int yAxis, final int cAxis, //
-		final ValueScaling scaling, final long... pos)
-	{
-		final double min, max;
-		final boolean full = scaling == ValueScaling.FULL || //
-			scaling == ValueScaling.AUTO && isNarrowType(source);
-
-		final T firstElement = Views.iterable(source).firstElement();
-
-		if (full) {
-			// scale the intensities based on the full range of the type
-			min = firstElement.getMinValue();
-			max = firstElement.getMaxValue();
-		}
-		else {
-			// scale the intensities based on the sample values
-			final IterableInterval<T> ii = ops.transform().flatIterableView(source);
-			final Pair<T, T> minMax = ops.stats().minMax(ii);
-			min = minMax.getA().getRealDouble();
-			max = minMax.getB().getRealDouble();
-		}
-
-		// create arrays from generated min/max
-		final int arraySize = cAxis >= 0 ? (int) source.dimension(cAxis) : 1;
-		final double[] minArray = new double[arraySize];
-		final double[] maxArray = new double[arraySize];
-		for (int i = 0; i < minArray.length; i++) {
-			minArray[i] = min;
-			maxArray[i] = max;
-		}
-
-		return display(source, xAxis, yAxis, cAxis, minArray, maxArray, pos);
-	}
 
 	@Override
 	public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T>
@@ -307,12 +229,6 @@ public class DefaultNotebookService extends AbstractService implements
 	}
 
 	// -- Helper methods --
-
-	private <T extends RealType<T>> boolean isNarrowType(
-		final RandomAccessibleInterval<T> source)
-	{
-		return Util.getTypeFromInterval(source).getBitsPerPixel() <= 8;
-	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private String encodeImage(final RandomAccessibleInterval<?> image)
