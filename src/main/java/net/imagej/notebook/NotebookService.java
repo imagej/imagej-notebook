@@ -80,6 +80,14 @@ public interface NotebookService extends ImageJService {
 	}
 
 	/**
+	 * Converts the given object to a form renderable by scientific notebooks.
+	 *
+	 * @param source The object to render.
+	 * @return an object that the notebook knows how to draw onscreen.
+	 */
+	Object display(Object source);
+
+	/**
 	 * Converts the given image to a form renderable by scientific notebooks.
 	 *
 	 * @param source The image to render.

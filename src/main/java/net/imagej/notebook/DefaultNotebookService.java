@@ -72,6 +72,8 @@ public class DefaultNotebookService extends AbstractService implements
 	@Parameter
 	private OpService ops;
 
+	// -- Service methods --
+
 	@Override
 	public void initialize() {
 		try {
@@ -90,8 +92,7 @@ public class DefaultNotebookService extends AbstractService implements
 					.collect(Collectors.toList());
 			for (final Class<?> mimeFriendlyType : mimeFriendlyTypes) {
 				BeakerX.register(mimeFriendlyType, (map, object) -> {
-					final MIMEObject mimeObj = //
-						convertService.convert(object, MIMEObject.class);
+					final MIMEObject mimeObj = mime(object);
 					if (mimeObj != null) map.put(mimeObj.mimeType(), mimeObj.data());
 				});
 			}
@@ -101,7 +102,13 @@ public class DefaultNotebookService extends AbstractService implements
 		}
 	}
 
-	// -- Public API --
+	// -- NotebookService methods --
+
+	@Override
+	public Object display(final Object source) {
+		final MIMEObject mimeObj = mime(source);
+		return mimeObj == null ? source : mimeObj;
+	}
 
 	@Override
 	public <T extends RealType<T> & NativeType<T>> RandomAccessibleInterval<T>
@@ -238,5 +245,11 @@ public class DefaultNotebookService extends AbstractService implements
 			);
 		}
 		return table;
+	}
+
+	// -- Helper methods --
+
+	private MIMEObject mime(final Object object) {
+		return convertService.convert(object, MIMEObject.class);
 	}
 }
