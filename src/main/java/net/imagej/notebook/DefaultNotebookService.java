@@ -2,18 +2,18 @@
  * #%L
  * ImageJ software for multidimensional image processing and analysis.
  * %%
- * Copyright (C) 2017 Board of Regents of the University of
+ * Copyright (C) 2017 - 2018 Board of Regents of the University of
  * Wisconsin-Madison.
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * 
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,39 +30,26 @@
 
 package net.imagej.notebook;
 
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import net.imagej.display.ColorTables;
-import net.imagej.display.DatasetView;
+import net.imagej.notebook.mime.MIMEObject;
 import net.imagej.ops.OpService;
 import net.imagej.ops.Ops;
 import net.imagej.ops.special.inplace.Inplaces;
 import net.imglib2.FinalInterval;
-import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.converter.Converter;
-import net.imglib2.converter.Converters;
-import net.imglib2.converter.RealLUTConverter;
-import net.imglib2.display.ColorTable8;
-import net.imglib2.display.projector.composite.CompositeXYProjector;
-import net.imglib2.display.screenimage.awt.ARGBScreenImage;
 import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.IntervalIndexer;
-import net.imglib2.util.Pair;
 import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
-import net.imglib2.view.Views;
 
+import org.scijava.convert.ConvertService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.service.AbstractService;
@@ -80,93 +67,47 @@ public class DefaultNotebookService extends AbstractService implements
 {
 
 	@Parameter
+	private ConvertService convertService;
+
+	@Parameter
 	private OpService ops;
+
+	// -- Service methods --
 
 	@Override
 	public void initialize() {
 		try {
-			BeakerX.register(RandomAccessibleInterval.class, (map, image) -> {
-				map.put("image/png", encodeImage(image));
+			// Anything that implements MIMEObject can be displayed.
+			BeakerX.register(MIMEObject.class, (map, mimeObj) -> {
+				map.put(mimeObj.mimeType(), mimeObj.data());
 			});
 
-			BeakerX.register(DatasetView.class, (map, imageView) -> {
-				map.put("image/png", //
-					BeakerX.base64(imageView.getScreenImage().image()));
-			});
+			// Anything convertible to MIMEObject can also be displayed.
+			// TODO: Fix bug in ConvertService#getCompatibleInputClasses.
+			// It should check class assignability, not only exact equality.
+			final List<Class<?>> mimeFriendlyTypes = //
+				convertService.getInstances().stream() //
+					.filter(c -> MIMEObject.class.isAssignableFrom(c.getOutputType())) //
+					.map(c -> c.getInputType()) //
+					.collect(Collectors.toList());
+			for (final Class<?> mimeFriendlyType : mimeFriendlyTypes) {
+				BeakerX.register(mimeFriendlyType, (map, object) -> {
+					final MIMEObject mimeObj = mime(object);
+					if (mimeObj != null) map.put(mimeObj.mimeType(), mimeObj.data());
+				});
+			}
 		}
 		catch (final NoClassDefFoundError exc) {
 			// NB: BeakerX is not available; ignore.
 		}
 	}
 
-	// -- Public API --
+	// -- NotebookService methods --
 
 	@Override
-	public <T extends RealType<T>> Object display(
-		final RandomAccessibleInterval<T> source, final int xAxis, final int yAxis,
-		final int cAxis, final double[] min, final double[] max, final long... pos)
-	{
-		final IntervalView<T> image = ops.transform().zeroMinView(source);
-
-		final int w = xAxis >= 0 ? (int) image.dimension(xAxis) : 1;
-		final int h = yAxis >= 0 ? (int) image.dimension(yAxis) : 1;
-		final int c = cAxis >= 0 ? (int) image.dimension(cAxis) : 1;
-		final ARGBScreenImage target = new ARGBScreenImage(w, h);
-		final ArrayList<Converter<T, ARGBType>> converters = new ArrayList<>(c);
-
-		if (min.length != c || max.length != c) throw new IllegalArgumentException(
-			"clamping arrays must be of the same length as the number of channels!");
-
-		for (int i = 0; i < c; i++) {
-			final ColorTable8 lut = c == 1 ? //
-				ColorTables.GRAYS : ColorTables.getDefaultColorTable(i);
-			converters.add(new RealLUTConverter<T>(min[i], max[i], lut));
-		}
-		final CompositeXYProjector<T> proj = new CompositeXYProjector<>(image,
-			target, converters, cAxis);
-		if (pos != null && pos.length > 0) proj.setPosition(pos);
-		proj.setComposite(true);
-		proj.map();
-
-		return target.image();
-
-	}
-
-	@Override
-	public <T extends RealType<T>> Object display(
-		final RandomAccessibleInterval<T> source, //
-		final int xAxis, final int yAxis, final int cAxis, //
-		final ValueScaling scaling, final long... pos)
-	{
-		final double min, max;
-		final boolean full = scaling == ValueScaling.FULL || //
-			scaling == ValueScaling.AUTO && isNarrowType(source);
-
-		final T firstElement = Views.iterable(source).firstElement();
-
-		if (full) {
-			// scale the intensities based on the full range of the type
-			min = firstElement.getMinValue();
-			max = firstElement.getMaxValue();
-		}
-		else {
-			// scale the intensities based on the sample values
-			final IterableInterval<T> ii = ops.transform().flatIterableView(source);
-			final Pair<T, T> minMax = ops.stats().minMax(ii);
-			min = minMax.getA().getRealDouble();
-			max = minMax.getB().getRealDouble();
-		}
-
-		// create arrays from generated min/max
-		final int arraySize = cAxis >= 0 ? (int) source.dimension(cAxis) : 1;
-		final double[] minArray = new double[arraySize];
-		final double[] maxArray = new double[arraySize];
-		for (int i = 0; i < minArray.length; i++) {
-			minArray[i] = min;
-			maxArray[i] = max;
-		}
-
-		return display(source, xAxis, yAxis, cAxis, minArray, maxArray, pos);
+	public Object display(final Object source) {
+		final MIMEObject mimeObj = mime(source);
+		return mimeObj == null ? source : mimeObj;
 	}
 
 	@Override
@@ -308,43 +249,7 @@ public class DefaultNotebookService extends AbstractService implements
 
 	// -- Helper methods --
 
-	private <T extends RealType<T>> boolean isNarrowType(
-		final RandomAccessibleInterval<T> source)
-	{
-		return Util.getTypeFromInterval(source).getBitsPerPixel() <= 8;
+	private MIMEObject mime(final Object object) {
+		return convertService.convert(object, MIMEObject.class);
 	}
-
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private String encodeImage(final RandomAccessibleInterval<?> image)
-		throws IOException
-	{
-		final Object element = Util.getTypeFromInterval(image);
-
-		if (element instanceof ARGBType) {
-			return encodeARGBTypeImage((RandomAccessibleInterval) image);
-		}
-		else if (element instanceof RealType) {
-			return encodeRealTypeImage((RandomAccessibleInterval) image);
-		}
-		else {
-			throw new IllegalArgumentException("Unsupported image type: " + element
-				.getClass().getName());
-		}
-	}
-
-	private String encodeARGBTypeImage(
-		final RandomAccessibleInterval<ARGBType> image) throws IOException
-	{
-		// NB: ignoring alpha
-		return encodeRealTypeImage(Converters.argbChannels(image, 1, 2, 3));
-	}
-
-	private <T extends RealType<T>> String encodeRealTypeImage(
-		final RandomAccessibleInterval<T> image) throws IOException
-	{
-		final BufferedImage bi = (BufferedImage) DefaultNotebookService.this
-			.display(image);
-		return BeakerX.base64(bi);
-	}
-
 }

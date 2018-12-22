@@ -5,13 +5,13 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>23.2.0</version>
+		<version>24.0.0</version>
 		<relativePath />
 	</parent>
 
 	<groupId>net.imagej</groupId>
 	<artifactId>imagej-notebook</artifactId>
-	<version>0.3.1-SNAPSHOT</version>
+	<version>0.4.0-SNAPSHOT</version>
 
 	<name>ImageJ Notebook</name>
 	<description>Functions for working with ImageJ in scientific notebook software.</description>
@@ -118,6 +118,16 @@ Wisconsin-Madison.</license.copyrightOwners>
 		<dependency>
 			<groupId>org.scijava</groupId>
 			<artifactId>scijava-common</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.scijava</groupId>
+			<artifactId>scijava-table</artifactId>
+		</dependency>
+
+		<!-- Third party dependencies -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-text</artifactId>
 		</dependency>
 
 		<!-- Provided scope dependencies -->

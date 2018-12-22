@@ -28,49 +28,29 @@
  * #L%
  */
 
-package net.imagej.notebook;
+package net.imagej.notebook.mime;
 
-import com.twosigma.beakerx.mimetype.MIMEContainer;
+import net.imagej.display.DatasetView;
+import net.imagej.notebook.Images;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
-
-import jupyter.Displayer;
-import jupyter.Displayers;
+import org.scijava.convert.Converter;
+import org.scijava.plugin.Plugin;
 
 /**
- * Helper class to isolate the BeakerX dependencies.
+ * Converter from {@link DatasetView} to {@link HTMLObject}.
  *
  * @author Curtis Rueden
  */
-class BeakerX {
+@Plugin(type = Converter.class)
+public class DatasetViewToHTMLConverter extends
+	MIMEConverter<DatasetView, HTMLObject>
+{
 
-	public interface DisplayerPopulator<T> {
-
-		void populate(Map<String, String> map, T object) throws Exception;
-	}
-
-	public static <T> void register(final Class<T> clazz,
-		final DisplayerPopulator<T> populator)
-	{
-		Displayers.register(clazz, new Displayer<T>() {
-
-			@Override
-			public Map<String, String> display(final T object) {
-				final HashMap<String, String> m = new HashMap<>();
-				try {
-					populator.populate(m, object);
-				}
-				catch (final Exception exc) {
-					final StringWriter sw = new StringWriter();
-					exc.printStackTrace(new PrintWriter(sw));
-					m.put(MIMEContainer.MIME.TEXT_HTML, "<div><pre>" + sw.toString() +
-						"</pre></div>");
-				}
-				return m;
-			}
-		});
+	@Override
+	protected HTMLObject convert(final DatasetView imageView) {
+		final String name = imageView.getData().getName();
+		return () -> "<img src=\"data:image/png;charset=utf-8;base64," + //
+			Images.base64(imageView.getScreenImage().image()) + //
+			"\" alt=\"" + name + "\" title=\"" + name + "\" />";
 	}
 }

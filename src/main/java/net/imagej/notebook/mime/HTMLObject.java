@@ -27,50 +27,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-
-package net.imagej.notebook;
-
-import com.twosigma.beakerx.mimetype.MIMEContainer;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
-
-import jupyter.Displayer;
-import jupyter.Displayers;
+package net.imagej.notebook.mime;
 
 /**
- * Helper class to isolate the BeakerX dependencies.
- *
+ * An object that knows how to encode itself as an HTML string.
+ * 
  * @author Curtis Rueden
  */
-class BeakerX {
+@FunctionalInterface
+public interface HTMLObject extends MIMEObject {
 
-	public interface DisplayerPopulator<T> {
-
-		void populate(Map<String, String> map, T object) throws Exception;
-	}
-
-	public static <T> void register(final Class<T> clazz,
-		final DisplayerPopulator<T> populator)
-	{
-		Displayers.register(clazz, new Displayer<T>() {
-
-			@Override
-			public Map<String, String> display(final T object) {
-				final HashMap<String, String> m = new HashMap<>();
-				try {
-					populator.populate(m, object);
-				}
-				catch (final Exception exc) {
-					final StringWriter sw = new StringWriter();
-					exc.printStackTrace(new PrintWriter(sw));
-					m.put(MIMEContainer.MIME.TEXT_HTML, "<div><pre>" + sw.toString() +
-						"</pre></div>");
-				}
-				return m;
-			}
-		});
+	@Override
+	default String mimeType() {
+		return "text/html";
 	}
 }
