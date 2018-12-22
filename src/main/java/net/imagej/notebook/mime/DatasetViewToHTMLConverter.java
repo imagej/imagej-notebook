@@ -30,57 +30,27 @@
 
 package net.imagej.notebook.mime;
 
-import java.io.IOException;
-
+import net.imagej.display.DatasetView;
 import net.imagej.notebook.Images;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.converter.Converters;
-import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.util.Util;
 
 import org.scijava.convert.Converter;
 import org.scijava.plugin.Plugin;
 
 /**
- * Converter from {@link RandomAccessibleInterval} to {@link PNGObject}.
+ * Converter from {@link DatasetView} to {@link HTMLObject}.
  *
  * @author Curtis Rueden
  */
 @Plugin(type = Converter.class)
-public class RAIToPNGConverter extends
-	MIMEConverter<RandomAccessibleInterval<?>, PNGObject>
+public class DatasetViewToHTMLConverter extends
+	MIMEConverter<DatasetView, HTMLObject>
 {
 
 	@Override
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	protected PNGObject convert(final RandomAccessibleInterval<?> image) {
-		return () -> {
-			final Object element = Util.getTypeFromInterval(image);
-
-			if (element instanceof ARGBType) {
-				return encodeARGBTypeImage((RandomAccessibleInterval<ARGBType>) image);
-			}
-			else if (element instanceof RealType) {
-				return encodeRealTypeImage((RandomAccessibleInterval) image);
-			}
-			else {
-				throw new IllegalArgumentException("Unsupported image type: " + //
-					element.getClass().getName());
-			}
-		};
-	}
-
-	private static String encodeARGBTypeImage(
-		final RandomAccessibleInterval<ARGBType> image) throws IOException
-	{
-		// NB: ignoring alpha
-		return encodeRealTypeImage(Converters.argbChannels(image, 1, 2, 3));
-	}
-
-	private static <T extends RealType<T>> String encodeRealTypeImage(
-		final RandomAccessibleInterval<T> image) throws IOException
-	{
-		return Images.base64(Images.bufferedImage(image));
+	protected HTMLObject convert(final DatasetView imageView) {
+		final String name = imageView.getData().getName();
+		return () -> "<img src=\"data:image/png;charset=utf-8;base64," + //
+			Images.base64(imageView.getScreenImage().image()) + //
+			"\" alt=\"" + name + "\" title=\"" + name + "\" />";
 	}
 }
