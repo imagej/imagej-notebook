@@ -62,29 +62,29 @@ public class TableToHTMLConverter extends
 
 	private String html(final Table<?, ?> table) throws IOException {
 		boolean rowLabels = false;
+		final StringBuilder sb = new StringBuilder();
 
-		// Start table and add extra heading column in case there's row headings
-		String htmlTable = startTable();
-		htmlTable += appendRowLabelHeading();
-
-		// Add headings
+		// Add headings.
 		for (int i = 0; i < table.getColumnCount(); i++) {
-			htmlTable += appendHeadings(html(table.getColumnHeader(i)), //
-				i == table.getColumnCount() - 1);
+			sb.append("<th>" + html(table.getColumnHeader(i)) + "</th>");
 		}
+		sb.append("</tr></thead><tbody>");
 
-		// Add data
+		// Add rows.
 		for (int i = 0; i < table.getRowCount(); i++) {
-			if (table.getRowHeader(i) != null) rowLabels = true;
-			htmlTable += appendRowLabelData(table.getRowHeader(i));
+			final String rowHeader = table.getRowHeader(i);
+			if (rowHeader != null) rowLabels = true;
+			sb.append("<tr><td class =\"rowLabel\">");
+			sb.append(rowHeader == null ? "&nbsp;" : rowHeader);
+			sb.append("</td>");
 			for (int j = 0; j < table.getColumnCount(); j++) {
-				htmlTable += appendData(html(table.get(j, i)), false, //
-					j == table.getColumnCount());
+				sb.append("<td>" + html(table.get(j, i)) + "</td>");
 			}
+			sb.append("</tr>");
 		}
-		htmlTable += endTable();
+		sb.append("</tbody></table>");
 
-		return getTableStyle(rowLabels) + htmlTable;
+		return tableStart(rowLabels) + sb;
 	}
 
 	/** Gets an HTML string representing the given object. */
@@ -98,56 +98,23 @@ public class TableToHTMLConverter extends
 		return StringEscapeUtils.escapeHtml4(text);
 	}
 
-	/** Returns the style tag used to style HTML tables. */
-	private static String getTableStyle(final boolean displayRowLabel) {
+	/** Unique ID for every table class produced. */
+	private static long id = 0;
+
+	/** Gets the start of the table markup, including style and initial tags. */
+	private static String tableStart(final boolean displayRowLabel) {
+		final String tableClass = "table.scijava" + id++;
 		final String rowLabelStyle = displayRowLabel ? "" : //
-			"table.scijava td.rowLabel, table.scijava th.rowLabel {display: none;}";
+			tableClass + " td.rowLabel, " + tableClass + " th.rowLabel {display: none;}";
 		return "<style>" +
-			"table.scijava {color: #333; font-family: Helvetica, Arial, sans-serif; border-collapse: collapse; border-spacing: 0;}" +
-			"table.scijava td, table.scijava th {border: 1px solid #C9C7C7;}" +
-			"table.scijava th, table.scijava td.rowLabel {background: #626262; color: #FFFFFF; font-weight: bold; text-align: left;}" +
-			"table.scijava td {text-align: left;}" +
-			"table.scijava tr:nth-child(even) {background: #F3F3F3;}" +
-			"table.scijava tr:nth-child(odd) {background: #FFFFFF;}" +
-			"table.scijava tbody tr:hover {background: #BDF4B5;}" + //
-			rowLabelStyle + "</style>";
-	}
-
-	private static String startTable() {
-		return "<table class =\"scijava\"><thead><tr>";
-	}
-
-	private static String appendRowLabelHeading() {
-		return "<th class=\"rowLabel\">&nbsp;</th>";
-	}
-
-	private static String appendHeadings(final String data, final boolean end) {
-		final String html = "<th>" + data + "</th>";
-		if (end) return html + "</tr></thead><tbody>";
-		return html;
-	}
-
-	private static String appendData(final String data, final boolean start,
-		final boolean end)
-	{
-		String html = "";
-		if (start) html += "<tr>";
-		html += "<td>" + data + "</td>";
-		if (end) html += "</tr>";
-		return html;
-	}
-
-	private static String appendRowLabelData(final String data) {
-		String html = "<tr><td class =\"rowLabel\">";
-
-		if (data == null) html += "&nbsp;";
-		else html += data;
-
-		html += "</td>";
-		return html;
-	}
-
-	private static String endTable() {
-		return "</tbody></table>";
+			tableClass + " {color: #333; font-family: Helvetica, Arial, sans-serif; border-collapse: collapse; border-spacing: 0;}" +
+			tableClass + " td, " + tableClass + " th {border: 1px solid #C9C7C7;}" +
+			tableClass + " th, " + tableClass + " td.rowLabel {background: #626262; color: #FFFFFF; font-weight: bold; text-align: left;}" +
+			tableClass + " td {text-align: left;}" +
+			tableClass + " tr:nth-child(even) {background: #F3F3F3;}" +
+			tableClass + " tr:nth-child(odd) {background: #FFFFFF;}" +
+			tableClass + " tbody tr:hover {background: #BDF4B5;}" + //
+			rowLabelStyle + "</style><table class =\"" + tableClass +
+			"\"><thead><tr>" + "<th class=\"rowLabel\">&nbsp;</th>";
 	}
 }
