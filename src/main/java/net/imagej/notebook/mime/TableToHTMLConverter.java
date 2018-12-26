@@ -89,6 +89,7 @@ public class TableToHTMLConverter extends
 
 	/** Gets an HTML string representing the given object. */
 	private String html(final Object o) throws IOException {
+		if (o == null) return "";
 		final HTMLObject htmlObj = convertService.convert(o, HTMLObject.class);
 		return htmlObj == null ? escape(o.toString()) : htmlObj.data();
 	}
