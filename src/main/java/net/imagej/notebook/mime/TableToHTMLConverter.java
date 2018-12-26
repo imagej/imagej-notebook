@@ -100,8 +100,8 @@ public class TableToHTMLConverter extends
 
 	/** Returns the style tag used to style HTML tables. */
 	private static String getTableStyle(final boolean displayRowLabel) {
-		final String rowLabelStyle = displayRowLabel ? //
-			"table.scijava td.rowLabel, table.scijava th.rowLabel {display: none;}" : "";
+		final String rowLabelStyle = displayRowLabel ? "" : //
+			"table.scijava td.rowLabel, table.scijava th.rowLabel {display: none;}";
 		return "<style>" +
 			"table.scijava {color: #333; font-family: Helvetica, Arial, sans-serif; border-collapse: collapse; border-spacing: 0;}" +
 			"table.scijava td, table.scijava th {border: 1px solid #C9C7C7;}" +
