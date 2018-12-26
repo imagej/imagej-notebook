@@ -115,6 +115,19 @@ public final class Images {
 		return Base64.getEncoder().encodeToString(encode(image));
 	}
 
+	public static String html(final RenderedImage image) throws IOException {
+		return html(image, null);
+	}
+
+	public static String html(final RenderedImage image, final String title)
+		throws IOException
+	{
+		final String titleAttributes = title == null ? "" : //
+			"alt=\"" + title + "\" title=\"" + title + "\" ";
+		return "<img src=\"data:image/png;charset=utf-8;base64," + //
+			base64(image) + "\" " + titleAttributes + "/>";
+	}
+
 	/**
 	 * Converts the given {@link Dataset} to a {@link BufferedImage}.
 	 *

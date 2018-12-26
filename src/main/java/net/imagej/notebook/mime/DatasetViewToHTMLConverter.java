@@ -48,9 +48,7 @@ public class DatasetViewToHTMLConverter extends
 
 	@Override
 	protected HTMLObject convert(final DatasetView imageView) {
-		final String name = imageView.getData().getName();
-		return () -> "<img src=\"data:image/png;charset=utf-8;base64," + //
-			Images.base64(imageView.getScreenImage().image()) + //
-			"\" alt=\"" + name + "\" title=\"" + name + "\" />";
+		final String title = imageView.getData().getName();
+		return () -> Images.html(imageView.getScreenImage().image(), title);
 	}
 }

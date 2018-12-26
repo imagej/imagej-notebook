@@ -81,7 +81,6 @@ public class RAIToHTMLConverter extends
 	private static <T extends RealType<T>> String encodeRealTypeImage(
 		final RandomAccessibleInterval<T> image) throws IOException
 	{
-		return "<img src=\"data:image/png;charset=utf-8;base64," + //
-			Images.base64(Images.bufferedImage(image)) + "\" />";
+		return Images.html(Images.bufferedImage(image));
 	}
 }
