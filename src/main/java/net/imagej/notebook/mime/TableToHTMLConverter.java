@@ -61,30 +61,62 @@ public class TableToHTMLConverter extends
 	// -- Helper methods --
 
 	private String html(final Table<?, ?> table) throws IOException {
+		// Check for the presence of row and/or column headers.
+		boolean colLabels = false;
+		for (int col = 0; col < table.getColumnCount(); col++) {
+			if (table.getColumnHeader(col) != null) { colLabels = true; break; }
+		}
 		boolean rowLabels = false;
+		for (int row = 0; row < table.getRowCount(); row++) {
+			if (table.getRowHeader(row) != null) { rowLabels = true; break; }
+		}
+
 		final StringBuilder sb = new StringBuilder();
 
-		// Add headings.
-		for (int i = 0; i < table.getColumnCount(); i++) {
-			sb.append("<th>" + html(table.getColumnHeader(i)) + "</th>");
+		// Add table style rules.
+		sb.append("<style>" + //
+			"table.scijava {color: #333; font-family: Helvetica, Arial, sans-serif; border-collapse: collapse; border-spacing: 0;}" +
+			"table.scijava td, table.scijava th {border: 1px solid #C9C7C7;}" +
+			"table.scijava th, table.scijava td.rowLabel {background: #626262; color: #FFFFFF; font-weight: bold; text-align: left;}" +
+			"table.scijava td {text-align: left;}" +
+			"table.scijava tr:nth-child(even) {background: #F3F3F3;}" +
+			"table.scijava tr:nth-child(odd) {background: #FFFFFF;}" +
+			"table.scijava tbody tr:hover {background: #BDF4B5;}" + //
+			"</style>");
+
+		// Begin the table.
+		sb.append("<table class =\"scijava\">");
+
+		// Add column headers if present.
+		if (colLabels) {
+			sb.append("<thead><tr>");
+			if (rowLabels) sb.append("<th class=\"rowLabel\">&nbsp;</th>");
+			for (int col = 0; col < table.getColumnCount(); col++) {
+				sb.append("<th>" + html(table.getColumnHeader(col)) + "</th>");
+			}
+			sb.append("</tr></thead>");
 		}
-		sb.append("</tr></thead><tbody>");
 
 		// Add rows.
-		for (int i = 0; i < table.getRowCount(); i++) {
-			final String rowHeader = table.getRowHeader(i);
-			if (rowHeader != null) rowLabels = true;
-			sb.append("<tr><td class =\"rowLabel\">");
-			sb.append(rowHeader == null ? "&nbsp;" : rowHeader);
-			sb.append("</td>");
-			for (int j = 0; j < table.getColumnCount(); j++) {
-				sb.append("<td>" + html(table.get(j, i)) + "</td>");
+		sb.append("<tbody>");
+		for (int row = 0; row < table.getRowCount(); row++) {
+			sb.append("<tr>");
+			// Add row header if present.
+			if (rowLabels) {
+				sb.append("<td class =\"rowLabel\">" + //
+					html(table.getRowHeader(row)) + "</td>");
+			}
+			// Add table data.
+			for (int col = 0; col < table.getColumnCount(); col++) {
+				sb.append("<td>" + html(table.get(col, row)) + "</td>");
 			}
 			sb.append("</tr>");
 		}
+
+		// Terminate the table.
 		sb.append("</tbody></table>");
 
-		return tableStart(rowLabels) + sb;
+		return sb.toString();
 	}
 
 	/** Gets an HTML string representing the given object. */
@@ -96,25 +128,5 @@ public class TableToHTMLConverter extends
 
 	private static String escape(final String text) {
 		return StringEscapeUtils.escapeHtml4(text);
-	}
-
-	/** Unique ID for every table class produced. */
-	private static long id = 0;
-
-	/** Gets the start of the table markup, including style and initial tags. */
-	private static String tableStart(final boolean displayRowLabel) {
-		final String tableClass = "table.scijava" + id++;
-		final String rowLabelStyle = displayRowLabel ? "" : //
-			tableClass + " td.rowLabel, " + tableClass + " th.rowLabel {display: none;}";
-		return "<style>" +
-			tableClass + " {color: #333; font-family: Helvetica, Arial, sans-serif; border-collapse: collapse; border-spacing: 0;}" +
-			tableClass + " td, " + tableClass + " th {border: 1px solid #C9C7C7;}" +
-			tableClass + " th, " + tableClass + " td.rowLabel {background: #626262; color: #FFFFFF; font-weight: bold; text-align: left;}" +
-			tableClass + " td {text-align: left;}" +
-			tableClass + " tr:nth-child(even) {background: #F3F3F3;}" +
-			tableClass + " tr:nth-child(odd) {background: #FFFFFF;}" +
-			tableClass + " tbody tr:hover {background: #BDF4B5;}" + //
-			rowLabelStyle + "</style><table class =\"" + tableClass +
-			"\"><thead><tr>" + "<th class=\"rowLabel\">&nbsp;</th>";
 	}
 }
