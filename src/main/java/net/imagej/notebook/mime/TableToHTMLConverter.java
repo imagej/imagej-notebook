@@ -73,17 +73,6 @@ public class TableToHTMLConverter extends
 
 		final StringBuilder sb = new StringBuilder();
 
-		// Add table style rules.
-		sb.append("<style>" + //
-			"table.scijava {color: #333; font-family: Helvetica, Arial, sans-serif; border-collapse: collapse; border-spacing: 0;}" +
-			"table.scijava td, table.scijava th {border: 1px solid #C9C7C7;}" +
-			"table.scijava th, table.scijava td.rowLabel {background: #626262; color: #FFFFFF; font-weight: bold; text-align: left;}" +
-			"table.scijava td {text-align: left;}" +
-			"table.scijava tr:nth-child(even) {background: #F3F3F3;}" +
-			"table.scijava tr:nth-child(odd) {background: #FFFFFF;}" +
-			"table.scijava tbody tr:hover {background: #BDF4B5;}" + //
-			"</style>");
-
 		// Begin the table.
 		sb.append("<table class =\"scijava\">");
 
