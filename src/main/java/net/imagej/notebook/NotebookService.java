@@ -96,9 +96,9 @@ public interface NotebookService extends ImageJService {
 	/**
 	 * Converts the given map data to a form renderable by scientific notebooks.
 	 * <p>
-	 * The map is considered to define a single-column table, with each key of the
-	 * map defining the header for a particular row, and its corresponding value
-	 * providing the cell of data. See {@link Tables#wrap(Map, String)}.
+	 * The map is treated as a single-column table, with each key of the map
+	 * defining the row header for a particular row, and the corresponding value
+	 * containing the cell of data. See {@link Tables#wrap(Map, String)}.
 	 * </p>
 	 *
 	 * @param map Map data to render.
