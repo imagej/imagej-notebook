@@ -30,6 +30,7 @@
 
 package net.imagej.notebook;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -93,28 +94,96 @@ public interface NotebookService extends ImageJService {
 	Object display(Object source);
 
 	/**
-	 * Converts the given table to a form renderable by scientific notebooks.
+	 * Converts the given list data to a form renderable by scientific notebooks.
+	 * See {@link #display(List, String, List)} for details.
 	 *
-	 * @param table The table to render. Each list element is a row; maps go from
-	 *          column name to data.
+	 * @param list List data to render.
 	 * @return an object that the notebook knows how to draw onscreen.
 	 */
-	default <T> Object display(final List<? extends Map<?, T>> table) {
-		return display(table, null);
+	default Object display(final List<?> list) {
+		return display(list, null, null);
 	}
 
 	/**
-	 * Converts the given table to a form renderable by scientific notebooks.
+	 * Converts the given list data to a form renderable by scientific notebooks.
+	 * See {@link #display(List, String, List)} for details.
 	 *
-	 * @param table The table to render. Each list element is a row; maps go from
-	 *          column name to data.
-	 * @param rowHeaders List of row header labels. Pass null for no row headers.
+	 * @param list List data to render.
+	 * @param colHeader Table column header label. Pass null for no column header.
+	 * @return an object that the notebook knows how to draw onscreen.
+	 * @see Tables#wrap
+	 */
+	default Object display(final List<?> list, final String colHeader) {
+		return display(list, colHeader, null);
+	}
+
+	/**
+	 * Converts the given list data to a form renderable by scientific notebooks.
+	 * See {@link #display(List, String, List)} for details.
+	 *
+	 * @param list List data to render.
+	 * @param rowHeaders List of table row header labels. Pass null for no row
+	 *          headers.
+	 * @return an object that the notebook knows how to draw onscreen.
+	 * @see Tables#wrap
+	 */
+	default Object display(final List<?> list, final List<String> rowHeaders) {
+		return display(list, null, rowHeaders);
+	}
+
+	/**
+	 * Converts the given list data to a form renderable by scientific notebooks.
+	 * <p>
+	 * Three sorts of lists are supported:
+	 * </p>
+	 * <ol>
+	 * <li>List of lists - If the first element is itself a list, a sequence of
+	 * tables is produced. Each element of the list is processed recursively, with
+	 * each item of the list defining its own structure.</li>
+	 * <li>List of maps - If the first element is a map, that map's keys define
+	 * the columns, with map values containing the cell data. See
+	 * {@link Tables#wrap(List, List)}.</li>
+	 * <li>List of other - Otherwise, the list is considered to define a
+	 * single-column table, with each element of the list containing one row/cell
+	 * of data. See {@link Tables#wrap(List, String, List)}.</li>
+	 * </ol>
+	 *
+	 * @param list List data to render; see above for details.
+	 * @param colHeader Table column header label. Pass null for no column header.
+	 * @param rowHeaders List of table row header labels. Pass null for no row
+	 *          headers.
 	 * @return an object that the notebook knows how to draw onscreen.
 	 */
-	default <T> Object display(final List<? extends Map<?, T>> table,
+	default <T> Object display(final List<T> list, final String colHeader,
 		final List<String> rowHeaders)
 	{
-		return display(Tables.wrap(table, rowHeaders));
+		final Object table; // an org.scijava.table.Table
+		if (list.isEmpty()) {
+			// Empty table.
+			table = Tables.wrap(list, colHeader, rowHeaders);
+		}
+		else if (list.get(0) instanceof List) {
+			// List of elements; process recursively.
+			@SuppressWarnings("unchecked")
+			final List<List<?>> data = (List<List<?>>) list;
+			final List<Object> tables = new ArrayList<>(data.size());
+			for (final List<?> item : data) {
+				final Object renderedItem = display(item, colHeader, rowHeaders);
+				tables.add(renderedItem);
+			}
+			table = tables; // NB: List, not Table.
+		}
+		else if (list.get(0) instanceof Map) {
+			// Multi-column table.
+			@SuppressWarnings("unchecked")
+			final List<Map<?, T>> data = (List<Map<?, T>>) list;
+			table = Tables.wrap(data, rowHeaders);
+		}
+		else {
+			// Single-column table.
+			table = Tables.wrap(list, colHeader, rowHeaders);
+		}
+		return display(table);
 	}
 
 	/**
