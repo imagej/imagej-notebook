@@ -36,6 +36,7 @@ import java.util.Map;
 
 import net.imagej.Dataset;
 import net.imagej.ImageJService;
+import net.imagej.display.DefaultDatasetView;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -394,4 +395,39 @@ public interface NotebookService extends ImageJService {
 	 * @return a table of the class's public methods.
 	 */
 	NotebookTable methods(Class<?> type, String prefix);
+	
+	/**
+	 * Conveniently wraps a {@link RandomAccessibleInterval} into a
+	 * {@link DefaultDatasetView}.
+	 * 
+	 * @param source - the input data
+	 * @return a DefaultDatasetView containing the data
+	 */
+	DefaultDatasetView view(final RandomAccessibleInterval<?> source);
+
+	/**
+	 * Conveniently wraps a {@link RandomAccessibleInterval} into a
+	 * {@link DefaultDatasetView} and presets the channel ranges to the given
+	 * minimum and maximum values.
+	 * 
+	 * @param source - the input data
+	 * @param min - the minimum for the channel ranges
+	 * @param max - the maximum for the channel ranges
+	 * @return a DefaultDatasetView containing the data
+	 */
+	DefaultDatasetView view(final RandomAccessibleInterval<?> source,
+		final double min, final double max);
+
+	/**
+	 * Conveniently wraps a {@link RandomAccessibleInterval} into a
+	 * {@link DefaultDatasetView} and presets the channel ranges to the given
+	 * minimum and maximum arrays.
+	 * 
+	 * @param source - the input data
+	 * @param min - the minimum for the channel ranges
+	 * @param max - the maximum for the channel ranges
+	 * @return a DefaultDatasetView containing the data
+	 */
+	DefaultDatasetView view(final RandomAccessibleInterval<?> source,
+		final double[] min, final double[] max);
 }
