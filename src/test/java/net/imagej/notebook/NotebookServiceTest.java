@@ -38,6 +38,8 @@ import java.util.LinkedHashMap;
 
 import net.imagej.Dataset;
 import net.imagej.DatasetService;
+import net.imagej.autoscale.AutoscaleService;
+import net.imagej.display.DatasetView;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
@@ -63,7 +65,7 @@ public class NotebookServiceTest {
 
 	@Before
 	public void setUp() {
-		context = new Context(NotebookService.class, DatasetService.class);
+		context = new Context(NotebookService.class, DatasetService.class, AutoscaleService.class);
 		ns = context.service(NotebookService.class);
 		ds = context.service(DatasetService.class);
 	}
@@ -134,6 +136,14 @@ public class NotebookServiceTest {
 
 		final Object rendered = ns.display(actual, min, max);
 		assertSameImageDetails(expected, rendered);
+	}
+	
+	@Test
+	public void testViewImg() {
+		final ArrayImg<UnsignedByteType, ByteArray> img = createTestImg();
+		final DatasetView dataset = ns.view(img);
+		dataset.rebuild();
+		assertSameImageDetails(img, dataset.getScreenImage().image());
 	}
 
 	@Test

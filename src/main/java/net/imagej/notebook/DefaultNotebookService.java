@@ -35,6 +35,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import net.imagej.Data;
+import net.imagej.DatasetService;
+import net.imagej.display.DataView;
+import net.imagej.display.DatasetView;
+import net.imagej.display.ImageDisplayService;
 import net.imagej.notebook.mime.MIMEObject;
 import net.imagej.ops.OpService;
 import net.imagej.ops.Ops;
@@ -68,6 +73,12 @@ public class DefaultNotebookService extends AbstractService implements
 
 	@Parameter
 	private ConvertService convertService;
+	
+	@Parameter
+	private ImageDisplayService ids;
+	
+	@Parameter
+	private DatasetService ds;
 
 	@Parameter
 	private OpService ops;
@@ -245,6 +256,19 @@ public class DefaultNotebookService extends AbstractService implements
 			);
 		}
 		return table;
+	}
+	
+	@Override
+	public <T extends RealType<T>> DatasetView viewRealType(
+		final RandomAccessibleInterval<T> source)
+	{
+		Data data = ds.create(source);
+		DataView view = ids.createDataView(data);
+		if (!(view instanceof DatasetView))
+			throw new IllegalArgumentException(
+				"source image cannot be cast to a DatasetView");
+		DatasetView datasetView = (DatasetView) view;
+		return datasetView;
 	}
 
 	// -- Helper methods --
