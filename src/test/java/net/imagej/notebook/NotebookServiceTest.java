@@ -39,7 +39,7 @@ import java.util.LinkedHashMap;
 import net.imagej.Dataset;
 import net.imagej.DatasetService;
 import net.imagej.autoscale.AutoscaleService;
-import net.imagej.display.DefaultDatasetView;
+import net.imagej.display.DatasetView;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
@@ -141,7 +141,7 @@ public class NotebookServiceTest {
 	@Test
 	public void testViewImg() {
 		final ArrayImg<UnsignedByteType, ByteArray> img = createTestImg();
-		final DefaultDatasetView dataset = ns.view(img);
+		final DatasetView dataset = ns.view(img);
 		dataset.rebuild();
 		assertSameImageDetails(img, dataset.getScreenImage().image());
 	}

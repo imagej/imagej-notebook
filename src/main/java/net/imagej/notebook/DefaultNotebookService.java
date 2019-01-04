@@ -37,9 +37,8 @@ import java.util.stream.Collectors;
 
 import net.imagej.Data;
 import net.imagej.DatasetService;
-import net.imagej.axis.Axes;
 import net.imagej.display.DataView;
-import net.imagej.display.DefaultDatasetView;
+import net.imagej.display.DatasetView;
 import net.imagej.display.ImageDisplayService;
 import net.imagej.notebook.mime.MIMEObject;
 import net.imagej.ops.OpService;
@@ -48,10 +47,8 @@ import net.imagej.ops.special.inplace.Inplaces;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.converter.Converters;
 import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.IntervalIndexer;
 import net.imglib2.util.Util;
@@ -262,61 +259,15 @@ public class DefaultNotebookService extends AbstractService implements
 	}
 	
 	@Override
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	public DefaultDatasetView view(final RandomAccessibleInterval<?> source) {
-
-		final Object element = Util.getTypeFromInterval(source);
-		if (element instanceof ARGBType) {
-			return viewRealType(Converters.argbChannels(
-				(RandomAccessibleInterval<ARGBType>) source, 1, 2, 3));
-		}
-		else if (element instanceof RealType) {
-			return viewRealType((RandomAccessibleInterval<RealType>) source);
-		}
-		else {
-			throw new IllegalArgumentException("Unsupported image type: " + element
-				.getClass().getName());
-		}
-	}
-
-	@Override
-	public DefaultDatasetView view(final RandomAccessibleInterval<?> source,
-		final double min, final double max)
-	{
-		DefaultDatasetView output = view(source);
-		output.setChannelRanges(min, max);
-		output.rebuild();
-		return output;
-	}
-
-	@Override
-	public DefaultDatasetView view(final RandomAccessibleInterval<?> source,
-		final double[] min, final double[] max)
-	{
-
-		if (min.length < source.numDimensions() || max.length < source
-			.numDimensions()) throw new IllegalArgumentException(
-				"Channel maximum and minimum arrays do not match image dimensions!");
-
-		DefaultDatasetView output = view(source);
-
-		for (int c = 0; c < output.getData().dimension(Axes.CHANNEL); c++) {
-			output.setChannelRange(c, min[c], max[c]);
-		}
-
-		output.rebuild();
-		return output;
-	}
-
-	private <T extends RealType<T>> DefaultDatasetView viewRealType(
+	public <T extends RealType<T>> DatasetView viewRealType(
 		final RandomAccessibleInterval<T> source)
 	{
 		Data data = ds.create(source);
 		DataView view = ids.createDataView(data);
-		if (!(view instanceof DefaultDatasetView))
+		if (!(view instanceof DatasetView))
 			throw new IllegalArgumentException(
-				"source image cannot be cast to a DefaultDataset");
-		DefaultDatasetView datasetView = (DefaultDatasetView) view;
+				"source image cannot be cast to a DatasetView");
+		DatasetView datasetView = (DatasetView) view;
 		return datasetView;
 	}
 

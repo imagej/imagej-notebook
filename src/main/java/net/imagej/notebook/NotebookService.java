@@ -36,10 +36,15 @@ import java.util.Map;
 
 import net.imagej.Dataset;
 import net.imagej.ImageJService;
+import net.imagej.axis.Axes;
+import net.imagej.display.DatasetView;
 import net.imagej.display.DefaultDatasetView;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.converter.Converters;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.Util;
 
 import org.scijava.table.Tables;
 
@@ -403,7 +408,22 @@ public interface NotebookService extends ImageJService {
 	 * @param source - the input data
 	 * @return a DefaultDatasetView containing the data
 	 */
-	DefaultDatasetView view(final RandomAccessibleInterval<?> source);
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	default DatasetView view(final RandomAccessibleInterval<?> source) {
+
+		final Object element = Util.getTypeFromInterval(source);
+		if (element instanceof ARGBType) {
+			return viewRealType(Converters.argbChannels(
+				(RandomAccessibleInterval<ARGBType>) source, 1, 2, 3));
+		}
+		else if (element instanceof RealType) {
+			return viewRealType((RandomAccessibleInterval<RealType>) source);
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported image type: " + element
+				.getClass().getName());
+		}
+	}
 
 	/**
 	 * Conveniently wraps a {@link RandomAccessibleInterval} into a
@@ -415,8 +435,14 @@ public interface NotebookService extends ImageJService {
 	 * @param max - the maximum for the channel ranges
 	 * @return a DefaultDatasetView containing the data
 	 */
-	DefaultDatasetView view(final RandomAccessibleInterval<?> source,
-		final double min, final double max);
+	default DatasetView view(final RandomAccessibleInterval<?> source,
+		final double min, final double max)
+	{
+		DatasetView output = view(source);
+		output.setChannelRanges(min, max);
+		output.rebuild();
+		return output;
+	}
 
 	/**
 	 * Conveniently wraps a {@link RandomAccessibleInterval} into a
@@ -428,6 +454,32 @@ public interface NotebookService extends ImageJService {
 	 * @param max - the maximum for the channel ranges
 	 * @return a DefaultDatasetView containing the data
 	 */
-	DefaultDatasetView view(final RandomAccessibleInterval<?> source,
-		final double[] min, final double[] max);
+	default DatasetView view(final RandomAccessibleInterval<?> source,
+		final double[] min, final double[] max)
+	{
+
+		if (min.length < source.numDimensions() || max.length < source
+			.numDimensions()) throw new IllegalArgumentException(
+				"Channel maximum and minimum arrays do not match image dimensions!");
+
+		DatasetView output = view(source);
+
+		for (int c = 0; c < output.getData().dimension(Axes.CHANNEL); c++) {
+			output.setChannelRange(c, min[c], max[c]);
+		}
+
+		output.rebuild();
+		return output;
+	}
+
+	/**
+	 * Conveniently wraps a {@link RandomAccessibleInterval} of {@link RealType}
+	 * into a {@link DefaultDatasetView} and presets the channel ranges to the
+	 * given minimum and maximum arrays.
+	 * 
+	 * @param source - the input data
+	 * @return a DefaultDatasetView containing the data
+	 */
+	<T extends RealType<T>> DatasetView viewRealType(
+		final RandomAccessibleInterval<T> source);
 }
