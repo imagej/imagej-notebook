@@ -15,11 +15,11 @@
 
 	<name>ImageJ Notebook</name>
 	<description>Functions for working with ImageJ in scientific notebook software.</description>
-	<url>http://imagej.net/Notebooks</url>
+	<url>https://imagej.net/Notebooks</url>
 	<inceptionYear>2017</inceptionYear>
 	<organization>
 		<name>ImageJ</name>
-		<url>http://imagej.net/</url>
+		<url>https://imagej.net/</url>
 	</organization>
 	<licenses>
 		<license>
@@ -32,7 +32,7 @@
 		<developer>
 			<id>ctrueden</id>
 			<name>Curtis Rueden</name>
-			<url>http://imagej.net/User:Rueden</url>
+			<url>https://imagej.net/User:Rueden</url>
 			<roles>
 				<role>founder</role>
 				<role>lead</role>
@@ -94,7 +94,7 @@ Wisconsin-Madison.</license.copyrightOwners>
 	<repositories>
 		<repository>
 			<id>imagej.public</id>
-			<url>http://maven.imagej.net/content/groups/public</url>
+			<url>https://maven.imagej.net/content/groups/public</url>
 		</repository>
 	</repositories>
 
