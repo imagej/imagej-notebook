@@ -99,7 +99,7 @@ public final class Charts {
 		if (channelCount == 1) {
 			// single channel; use grayscale
 			cNames = index -> "Counts";
-			colors = index -> Color.white;
+			colors = index -> Color.yellow.darker();
 		}
 		else if (channelCount == 3) {
 			// three channels; use RGB
