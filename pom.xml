@@ -89,6 +89,7 @@ Wisconsin-Madison.</license.copyrightOwners>
 		<jvm-repr.version>0.2.1</jvm-repr.version>
 		<beaker-kernel-base.version>1.0.0</beaker-kernel-base.version>
 		<scijava-table.version>0.4.0</scijava-table.version>
+		<xchart.version>3.5.4</xchart.version>
 	</properties>
 
 	<repositories>
@@ -129,6 +130,11 @@ Wisconsin-Madison.</license.copyrightOwners>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-text</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.knowm.xchart</groupId>
+			<artifactId>xchart</artifactId>
+			<version>${xchart.version}</version>
 		</dependency>
 
 		<!-- Provided scope dependencies -->
