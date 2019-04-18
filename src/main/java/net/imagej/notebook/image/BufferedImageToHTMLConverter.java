@@ -28,11 +28,13 @@
  * #L%
  */
 
-package net.imagej.notebook.mime;
+package net.imagej.notebook.image;
 
 import java.awt.image.BufferedImage;
 
 import net.imagej.notebook.Images;
+import net.imagej.notebook.mime.HTMLObject;
+import net.imagej.notebook.mime.MIMEConverter;
 
 import org.scijava.convert.ConvertService;
 import org.scijava.convert.Converter;

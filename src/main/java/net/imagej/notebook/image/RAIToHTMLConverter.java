@@ -28,27 +28,61 @@
  * #L%
  */
 
-package net.imagej.notebook.mime;
+package net.imagej.notebook.image;
 
-import net.imagej.display.DatasetView;
+import java.io.IOException;
+
 import net.imagej.notebook.Images;
+import net.imagej.notebook.mime.HTMLObject;
+import net.imagej.notebook.mime.MIMEConverter;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.converter.Converters;
+import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.Util;
 
 import org.scijava.convert.Converter;
 import org.scijava.plugin.Plugin;
 
 /**
- * Converter from {@link DatasetView} to {@link HTMLObject}.
+ * Converter from {@link RandomAccessibleInterval} to {@link HTMLObject}.
  *
  * @author Curtis Rueden
  */
 @Plugin(type = Converter.class)
-public class DatasetViewToHTMLConverter extends
-	MIMEConverter<DatasetView, HTMLObject>
+public class RAIToHTMLConverter extends
+	MIMEConverter<RandomAccessibleInterval<?>, HTMLObject>
 {
 
 	@Override
-	protected HTMLObject convert(final DatasetView imageView) {
-		final String title = imageView.getData().getName();
-		return () -> Images.html(imageView.getScreenImage().image(), title);
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	protected HTMLObject convert(final RandomAccessibleInterval<?> image) {
+		return () -> {
+			final Object element = Util.getTypeFromInterval(image);
+
+			if (element instanceof ARGBType) {
+				return encodeARGBTypeImage((RandomAccessibleInterval<ARGBType>) image);
+			}
+			else if (element instanceof RealType) {
+				return encodeRealTypeImage((RandomAccessibleInterval) image);
+			}
+			else {
+				throw new IllegalArgumentException("Unsupported image type: " + //
+					element.getClass().getName());
+			}
+		};
+	}
+
+	private static String encodeARGBTypeImage(
+		final RandomAccessibleInterval<ARGBType> image) throws IOException
+	{
+		// NB: ignoring alpha
+		return encodeRealTypeImage(Converters.argbChannels(image, 1, 2, 3));
+	}
+
+	private static <T extends RealType<T>> String encodeRealTypeImage(
+		final RandomAccessibleInterval<T> image) throws IOException
+	{
+		return Images.html(Images.bufferedImage(image));
 	}
 }

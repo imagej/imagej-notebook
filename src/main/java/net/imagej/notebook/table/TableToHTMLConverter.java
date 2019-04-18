@@ -28,9 +28,12 @@
  * #L%
  */
 
-package net.imagej.notebook.mime;
+package net.imagej.notebook.table;
 
 import java.io.IOException;
+
+import net.imagej.notebook.mime.HTMLObject;
+import net.imagej.notebook.mime.MIMEConverter;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.scijava.convert.ConvertService;
