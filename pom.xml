@@ -58,7 +58,7 @@
 	</mailingLists>
 
 	<scm>
-		<connection>scm:git:git://github.com/imagej/imagej-notebook</connection>
+		<connection>scm:git:https://github.com/imagej/imagej-notebook</connection>
 		<developerConnection>scm:git:git@github.com:imagej/imagej-notebook</developerConnection>
 		<tag>HEAD</tag>
 		<url>https://github.com/imagej/imagej-notebook</url>
